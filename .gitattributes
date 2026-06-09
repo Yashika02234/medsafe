@@ -1,9 +1,12 @@
+# Default: normalize all text files to LF on commit
 * text=auto eol=lf
 
+# Explicitly text files
 *.md        text eol=lf
 *.ts        text eol=lf
 *.tsx       text eol=lf
 *.js        text eol=lf
+*.jsx       text eol=lf
 *.json      text eol=lf
 *.css       text eol=lf
 *.html      text eol=lf
@@ -13,8 +16,10 @@
 *.prisma    text eol=lf
 *.sql       text eol=lf
 *.py        text eol=lf
+*.txt       text eol=lf
 *.sh        text eol=lf
 
+# Binary files — do not modify
 *.png       binary
 *.jpg       binary
 *.jpeg      binary
@@ -22,3 +27,7 @@
 *.gif       binary
 *.pdf       binary
 *.zip       binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.eot       binary
