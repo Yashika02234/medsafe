@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")    // must include ?pgbouncer=true&connection_limit=1
+  directUrl = env("DIRECT_URL")      // without pgbouncer, for migrations only
+}
+
+model users {
+  id                      String    @id @db.Uuid
+  // id MUST match Supabase auth.uid() — set by signup handler, not auto-generated
+  email                   String    @unique
+  name                    String
+  notification_preference String    @default("email")
+  // CHECK: notification_preference IN ('email', 'none')
+  consent_given           Boolean   @default(false)
+  consent_given_at        DateTime? @db.Timestamptz
+  consent_text_version    String    @default("v1.0")
+  // Increment when consent screen content changes. Middleware re-prompts
+  // users whose consent_text_version < current app version.
+  created_at              DateTime  @default(now()) @db.Timestamptz
+  updated_at              DateTime  @updatedAt @db.Timestamptz
+
+  family_members          family_members[]
+  notification_log        notification_log[]
+}
+
+model family_members {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String   @db.Uuid
+  name         String
+  relationship String   @default("self")
+  // CHECK: relationship IN ('self', 'parent', 'spouse', 'child', 'sibling', 'other')
+  is_self      Boolean  @default(false)
+  // PARTIAL UNIQUE INDEX required (not expressible in Prisma schema DSL):
+  // CREATE UNIQUE INDEX idx_one_self_per_user ON family_members (user_id) WHERE is_self = true;
+  // Enforces exactly one self member per user at database level.
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  user         users       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  medicines    medicines[]
+}
+
+model medicines {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  family_member_id         String    @db.Uuid
+  // No user_id — derive via family_member → user when needed
+  brand_name               String
+  generic_name             String?   // from CDSCO lookup
+  // salts[] and rxcuis[] REMOVED — see medicine_ingredients table
+  expiry_date              DateTime  @db.Date
+  // ALWAYS last day of stated expiry month. "06/2025" → 2025-06-30.
+  // Use normalizeExpiryDate(month, year) from src/lib/utils/expiry.ts EVERYWHERE.
+  // expiry_month and expiry_year REMOVED — use EXTRACT() from expiry_date.
+  quantity                 Int?
+  dosage_schedule          String?
+  is_active                Boolean   @default(true)
+  deactivated_at           DateTime? @db.Timestamptz   // null if still active
+  deactivation_reason      String?
+  // CHECK: deactivation_reason IN ('user_deleted', 'auto_archived') when not null
+  added_via                String    @default("manual")
+  // CHECK: added_via IN ('manual', 'scan')
+  resolution_status        String    @default("pending")
+  // CHECK: resolution_status IN ('pending', 'resolved', 'partial', 'unresolvable')
+  // Summary of ingredient resolution: worst status among medicine_ingredients.
+  // 'resolved' = all ingredients have rxcui
+  // 'partial'  = some ingredients resolved, others not
+  // 'unresolvable' = no ingredients could be resolved
+  resolution_error         String?   // short code: 'cdsco_miss'|'rxnorm_miss'|'network_error'
+  resolution_attempt_count Int       @default(0)
+  resolution_attempted_at  DateTime? @db.Timestamptz
+  created_at               DateTime  @default(now()) @db.Timestamptz
+  updated_at               DateTime  @updatedAt @db.Timestamptz
+
+  family_member            family_members        @relation(fields: [family_member_id], references: [id], onDelete: Cascade)
+  ingredients              medicine_ingredients[]
+  notification_log         notification_log[]
+  scan_log                 medicine_scan_log?
+}
+
+model medicine_ingredients {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  medicine_id       String    @db.Uuid
+  ordinal           Int       @default(0)             // display order within the medicine (0-indexed)
+  salt_name         String    @db.VarChar(255)        // e.g. "Ibuprofen", "Paracetamol"
+  rxcui             String?                           // null until resolved; null means unresolved (NOT empty string)
+  resolution_status String    @default("pending")
+  // CHECK: resolution_status IN ('pending', 'resolved', 'unresolvable')
+  // Per-ingredient status. 'partial' does not apply here — each ingredient either resolves or not.
+  created_at        DateTime  @default(now()) @db.Timestamptz
+
+  medicine          medicines @relation(fields: [medicine_id], references: [id], onDelete: Cascade)
+
+  @@index([medicine_id])    // fast ingredient lookup per medicine
+  @@index([rxcui])          // fast lookup of all medicines containing an rxcui
+}
+
+// Pair normalization rule (applies to ALL interactions tables):
+// ALWAYS sort two RxCUIs lexicographically before storing or querying.
+// const [a, b] = [rxcui_1, rxcui_2].sort()
+// rxcui_a is ALWAYS the lexicographically smaller value.
+
+model interactions_cache {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rxcui_a          String   // normalized: always smaller
+  rxcui_b          String   // normalized: always larger
+  severity         String
+  // CHECK: severity IN ('severe', 'moderate', 'mild', 'unknown')
+  severity_ordinal Int
+  // 1=severe, 2=moderate, 3=mild, 99=unknown
+  // Enables ORDER BY severity_ordinal ASC at database level
+  description      String
+  source           String   @default("rxnav")
+  // CHECK: source IN ('rxnav', 'gemini')
+  cached_at        DateTime @default(now()) @db.Timestamptz
+
+  // NO UNIQUE constraint on (rxcui_a, rxcui_b) — a pair can have multiple interactions
+  @@index([rxcui_a, rxcui_b])
+}
+
+model checked_pairs {
+  rxcui_a          String
+  rxcui_b          String
+  // Same normalization rule: rxcui_a < rxcui_b lexicographically
+  has_interactions Boolean
+  checked_at       DateTime @default(now()) @db.Timestamptz
+  needs_recheck    Boolean  @default(false)
+  // Set to true by a monthly maintenance job for pairs checked > 90 days ago.
+  // The interaction engine treats needs_recheck = true same as "not in table" —
+  // it calls RxNav and updates the cache.
+
+  @@id([rxcui_a, rxcui_b])
+}
+
+model notification_log {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String   @db.Uuid
+  // Deliberate redundancy: cron needs user email without JOIN chain
+  medicine_id       String   @db.Uuid
+  notification_type String
+  // CHECK: notification_type IN ('expiry_30', 'expiry_7', 'expiry_1')
+  status            String   @default("sent")
+  // CHECK: status IN ('sent', 'failed', 'skipped_preference')
+  error_message     String?  // Resend error text if status = 'failed'
+  sent_at           DateTime @default(now()) @db.Timestamptz
+
+  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  medicine          medicines @relation(fields: [medicine_id], references: [id], onDelete: Cascade)
+
+  // PARTIAL unique index replaces @@unique — allows retries after failure:
+  // CREATE UNIQUE INDEX idx_one_sent_per_medicine_type
+  //   ON notification_log (medicine_id, notification_type)
+  //   WHERE status = 'sent';
+}
+
+model medicine_scan_log {
+  // Populated in Phase 5 (OCR Scanner). Table exists from Phase 1 migration but empty.
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  medicine_id         String    @unique @db.Uuid
+  // One scan log per medicine (scan-added medicines only). @unique makes this one-to-one.
+  raw_ocr_text        String?   // Full Tesseract output before parsing
+  confidence_score    Float?    // Mean word confidence 0.0–100.0
+  parsed_brand_name   String?   // What OCR extracted as brand name
+  parsed_expiry       String?   // Raw expiry string from OCR e.g. "06/2025"
+  user_edited_name    Boolean   @default(false)  // User changed OCR name before saving
+  user_edited_expiry  Boolean   @default(false)  // User changed OCR expiry before saving
+  saved_brand_name    String?   // Final value user saved
+  saved_expiry_date   DateTime? @db.Date         // Final expiry saved
+  tesseract_version   String?   // e.g. "5.3.0" for model tracking
+  scanned_at          DateTime  @default(now()) @db.Timestamptz
+
+  medicine            medicines @relation(fields: [medicine_id], references: [id], onDelete: Cascade)
+}

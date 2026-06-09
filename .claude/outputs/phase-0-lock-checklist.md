@@ -267,16 +267,17 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 ---
 
 ### D-1: Prisma Schema File Written and Reviewed
-**Status:** 🔴 OPEN — BLOCKING
-**Decision Required:** The complete Prisma schema from the Architecture Baseline (Part 2) must be written into `prisma/schema.prisma` and reviewed line by line against this checklist.
-**Confirm each table:**
-- [ ] `users` — id, email, name, notification_preference, consent_given, consent_given_at, created_at, updated_at
-- [ ] `family_members` — id, user_id, name, relationship, is_self, created_at
-- [ ] `medicines` — id, family_member_id (NO user_id), brand_name, generic_name, salts TEXT[], rxcuis TEXT[], expiry_date DATE, expiry_month INT, expiry_year INT, quantity?, dosage_schedule?, is_active, added_via, resolution_status, resolution_attempted_at?, created_at, updated_at
-- [ ] `interactions_cache` — id, rxcui_a, rxcui_b, severity, description, source, cached_at (NO UNIQUE on pair)
-- [ ] `checked_pairs` — rxcui_a, rxcui_b, has_interactions, checked_at (composite PK)
-- [ ] `notification_log` — id, user_id, medicine_id, notification_type, sent_at (UNIQUE on medicine_id+notification_type)
-**Impact if any table is wrong:** A migration that adds a column after data exists requires backfilling. A migration that changes a column type (e.g., rxcui TEXT → rxcuis TEXT[]) after data exists requires data transformation scripts. Schema changes are cheap now, expensive later.
+**Status:** ✅ LOCKED — File: `prisma/schema.prisma` written and cross-checked (P0-T0, 2026-06-10)
+**Confirmed tables (8 models, all verified):**
+
+- [x] `users` — id, email, name, notification_preference, consent_given, consent_given_at, consent_text_version, created_at, updated_at
+- [x] `family_members` — id, user_id, name, relationship, is_self, created_at
+- [x] `medicines` — id, family_member_id (NO user_id), brand_name, generic_name, expiry_date DATE, quantity?, dosage_schedule?, is_active, deactivated_at?, deactivation_reason?, added_via, resolution_status, resolution_error?, resolution_attempt_count, resolution_attempted_at?, created_at, updated_at
+- [x] `medicine_ingredients` — id, medicine_id, ordinal, salt_name VARCHAR(255), rxcui?, resolution_status, created_at
+- [x] `interactions_cache` — id, rxcui_a, rxcui_b, severity, severity_ordinal, description, source, cached_at (NO UNIQUE on pair)
+- [x] `checked_pairs` — rxcui_a, rxcui_b, has_interactions, checked_at, needs_recheck (composite PK)
+- [x] `notification_log` — id, user_id, medicine_id, notification_type, status, error_message?, sent_at
+- [x] `medicine_scan_log` — id, medicine_id (UNIQUE), OCR metadata fields, scanned_at
 **Blocking:** YES
 
 ---
@@ -290,11 +291,12 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 
 ---
 
-### D-3: medicines.rxcuis Is TEXT[] (Array, Not String)
-**Status:** ✅ LOCKED (Baseline ND-5)
-**Confirm:** `rxcuis` field is `String[] @default([])` in Prisma. Stores all RxCUIs for all salts in a combination drug.
-**Action required:** Read schema.prisma and confirm `rxcuis String[]`, not `rxcui String`.
-**Impact if wrong:** Combination drugs (Combiflam, Augmentin, etc.) can only store one RxCUI. The Ibuprofen-Warfarin interaction is missed when a user takes Combiflam. This is a safety correctness bug that requires a migration + data transformation to fix after Phase 2.
+### D-3: medicine_ingredients Junction Table Replaces rxcuis/salts Arrays
+
+**Status:** ✅ LOCKED — Verified in `prisma/schema.prisma` (P0-T0, 2026-06-10)
+**Updated decision (DB review finding N-1):** The original baseline stored `salts TEXT[]` and `rxcuis TEXT[]` as parallel arrays on the medicines table. The DB review replaced this with a `medicine_ingredients` junction table. Each ingredient is a separate row with `salt_name`, `rxcui` (nullable), `ordinal`, and `resolution_status`.
+**Confirm:** `prisma/schema.prisma` has model `medicine_ingredients` with `rxcui String?` (nullable per-ingredient). The medicines model has NO `salts` or `rxcuis` fields.
+**Why this matters:** The junction table enables per-ingredient resolution status, null RxCUI for unresolved ingredients, and correct combination drug support without positional dependency between parallel arrays.
 **Blocking:** YES — confirm visually before migration
 
 ---
@@ -733,6 +735,7 @@ Update _state.md and relevant memory files at session end.
 ### Gate Checklist
 
 **External API Validation**
+
 - [ ] A-1: RxNorm/RxNav latency from India measured and documented
 - [ ] A-2: RxNorm resolution rate measured (target: ≥70% with synonyms)
 - [ ] A-3: RxNav interaction detection verified (target: 7/10 pairs, 0 false positives)
@@ -740,6 +743,7 @@ Update _state.md and relevant memory files at session end.
 - [ ] A-5: Gemini fallback decision made (if A-2 < 40%)
 
 **Data Assets**
+
 - [ ] B-1: CDSCO data source selected and documented
 - [ ] B-2: Dataset meets minimum quality bar (3,000+ entries, combination drugs)
 - [ ] B-3: Synonym table populated (30+ India↔US name mappings)
@@ -747,7 +751,8 @@ Update _state.md and relevant memory files at session end.
 - [ ] B-5: Data usage legal basis noted
 
 **Account Actions**
-- [ ] C-1: GitHub repository created and structure committed
+
+- [x] C-1: GitHub repository created and structure committed — [github.com/Yashika02234/medsafe](https://github.com/Yashika02234/medsafe)
 - [ ] C-2: Supabase project created in **ap-south-1 (Mumbai)** — region confirmed in dashboard
 - [ ] C-3: Vercel account connected to GitHub repo
 - [ ] C-4: Sentry project created, DSN stored
@@ -755,18 +760,20 @@ Update _state.md and relevant memory files at session end.
 - [ ] C-6: CRON_SECRET generated and stored securely
 
 **Database Schema**
-- [ ] D-1: prisma/schema.prisma written with all 6 tables
-- [ ] D-2: medicines.user_id is ABSENT
-- [ ] D-3: medicines.rxcuis is TEXT[]
-- [ ] D-4: interactions_cache has NO UNIQUE constraint on pair
-- [ ] D-5: checked_pairs has composite PRIMARY KEY
-- [ ] D-6: Pair normalization rule understood and normalizePair() utility planned
+
+- [x] D-1: prisma/schema.prisma written with all 8 tables — P0-T0 complete
+- [x] D-2: medicines.user_id is ABSENT — verified in schema.prisma
+- [x] D-3: medicine_ingredients junction table replaces rxcuis/salts arrays — verified in schema.prisma
+- [x] D-4: interactions_cache has NO UNIQUE constraint on pair — verified (@@index only)
+- [x] D-5: checked_pairs has composite PRIMARY KEY @@id([rxcui_a, rxcui_b]) — verified
+- [x] D-6: Pair normalization rule documented as comment in schema.prisma — normalizePair() utility to be written before Phase 3
 - [ ] D-7: normalizeExpiryDate() utility written
 - [ ] D-8: Prisma connection pooling configured (?pgbouncer=true)
 - [ ] D-9: Signup transaction pattern understood
 - [ ] D-10: Cascade delete direction verified
 
 **Service Architecture**
+
 - [ ] E-1: FastAPI deferred to Phase 5 confirmed
 - [ ] E-2: POST /api/medicines save-only pattern confirmed
 - [ ] E-3: GET /api/interactions cache-only pattern confirmed
@@ -774,28 +781,33 @@ Update _state.md and relevant memory files at session end.
 - [ ] E-5: Client orchestration state machine understood (can explain without notes)
 
 **Compliance**
+
 - [ ] F-1: DPDPA compliance tasks added to Phase 1 backlog
 - [ ] F-2: Consent screen text written
 - [ ] F-3: Medical disclaimer text and placement decided
 - [ ] F-4: Privacy policy content drafted
 
 **Technology**
+
 - [ ] G-1: EasyOCR confirmed absent from any requirements file
 - [ ] G-2: Fuse.js confirmed as autocomplete library
 - [ ] G-3: React Query pattern confirmed for all data fetching
 - [ ] G-4: Zod confirmed for all validation
 
 **Development Environment**
-- [ ] H-1: .nvmrc created with Node.js 20
-- [ ] H-3: Folder structure (frontend/, backend/, prisma/) committed
+
+- [x] H-1: .nvmrc created with Node.js 20 — bootstrap complete
+- [x] H-3: Folder structure (frontend/, backend/, prisma/) committed — bootstrap complete
 - [ ] H-4: frontend/.env.example written with all required variables
 
 **Design**
+
 - [ ] I-1: Design system approach decided (Option A: placeholder, or Option B: full system)
 - [ ] I-2: Severity color mapping decided and contrast verified
 - [ ] I-3: Mobile navigation pattern decided (bottom nav recommended)
 
 **Documentation**
+
 - [ ] J-1: Architecture Baseline read in full, all 9 parts understood
 - [ ] J-2: Session start prompt updated to reference architecture baseline
 

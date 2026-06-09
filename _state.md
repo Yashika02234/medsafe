@@ -34,8 +34,8 @@ Status: IN PROGRESS
 
 | Order | Task ID | Task | Status | Blockers |
 |-------|---------|------|--------|----------|
-| 0 | BOOTSTRAP | Create GitHub repo + project structure + VS Code setup | ⬜ | None — do this first |
-| 1 | P0-T0 | Write final prisma/schema.prisma per architecture baseline | ⬜ | Bootstrap |
+| 0 | BOOTSTRAP | Create GitHub repo + project structure + VS Code setup | ✅ | None — do this first |
+| 1 | P0-T0 | Write final prisma/schema.prisma per architecture baseline | ✅ | Bootstrap |
 | 2 | P0-T0b | Write .env.example with all required vars + comments | ⬜ | P0-T0 |
 | 3 | P0-T0c | ~~Create GitHub repo~~ (moved into Bootstrap above) | ✅ | — |
 | 4 | P0-T0d | Write consent screen text and medical disclaimer text | ⬜ | None |
@@ -90,7 +90,7 @@ Critical: `.gitattributes` must be created BEFORE any other files (line ending p
 
 ## Next Task
 
-P0-T0: Write final database schema files (prisma/schema.prisma, post-migration.sql, rls-policies.sql)
+P0-T0b: Write frontend/.env.example with all required environment variables and comments
 
 ---
 
@@ -176,6 +176,15 @@ P0-T0: Write final database schema files (prisma/schema.prisma, post-migration.s
 - ND-5 revised: junction table replaces array approach
 - ND-13, ND-14 added
 
+### Session 5 — 2026-06-10
+
+- BOOTSTRAP complete: .gitattributes, .gitignore, .nvmrc, README.md, .vscode/launch.json, .github/pull_request_template.md, prisma/README.md all added at root
+- Removed spurious nested medsafe/ subdirectory (4 files misplaced during initial bootstrap)
+- P0-T0 complete: wrote prisma/schema.prisma (8 models), post-migration.sql (10 CHECK constraints, 2 partial unique indexes, 2 performance indexes), rls-policies.sql (RLS on 6 tables)
+- All 6 P0-T0 cross-checks passed
+- Lock checklist updated: D-1 through D-6 marked addressed, D-3 text corrected (junction table replaces arrays), C-1/H-1/H-3 marked complete
+- Next: P0-T0b (frontend/.env.example)
+
 ---
 
-*Last updated: 2026-06-09*
+*Last updated: 2026-06-10*
