@@ -36,6 +36,7 @@ Status: IN PROGRESS
 |-------|---------|------|--------|----------|
 | 0 | BOOTSTRAP | Create GitHub repo + project structure + VS Code setup | ✅ | None — do this first |
 | 1 | P0-T0 | Write final prisma/schema.prisma per architecture baseline | ✅ | Bootstrap |
+| 1b | P1-T1 | Initialize Next.js 14 project in frontend/ | ✅ | Bootstrap |
 | 2 | P0-T0b | Write .env.example with all required vars + comments | ⬜ | P0-T0 |
 | 3 | P0-T0c | ~~Create GitHub repo~~ (moved into Bootstrap above) | ✅ | — |
 | 4 | P0-T0d | Write consent screen text and medical disclaimer text | ⬜ | None |
