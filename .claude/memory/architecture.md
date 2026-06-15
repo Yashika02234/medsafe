@@ -55,11 +55,25 @@
 - Caching: LRU cache on resolved names (same brand always maps to same salt)
 
 ### 3. Interaction Engine
-- Input: List of RxCUI identifiers (all medicines in a user's cabinet)
-- For each new medicine added: check all pairs against RxNav Interaction API
-- Severity classification: Severe / Moderate / Mild
+- Input: Drug names (from medicine_ingredients table) for all medicines in cabinet
+- For each new medicine added: check all pairs against OpenFDA Drug Label API
+- Data source: `GET api.fda.gov/drug/label.json?search=openfda.generic_name:"{name}"&limit=1`
+- Detection: Check if drug B's name appears in drug A's `drug_interactions` text, and vice versa
+- Severity classification: keyword inference from matched text context:
+  - "contraindicated" / "avoid" / "fatal" → SEVERE
+  - "serious" / "serotonin syndrome" → SEVERE
+  - "monitor closely" / "additive effect" → MODERATE
+  - name present, no severity keyword → MILD
+- Drug class enhancement (Phase 3): SSRI/opioid/ARB class synonyms to catch class-level interactions
 - Output: List of { drug_a, drug_b, severity, description }
-- Caching: LRU cache on (rxcui_a, rxcui_b) pairs — interactions don't change
+- Caching: FDA label text cached per drug; pair results cached in interactions_cache
+- Source field: `source = 'openfda'` in interactions_cache
+- Validated: 7/10 known pairs detected, 0/5 false positives (see P0-T4 report)
+
+> ⚠️ ARCHITECTURE CHANGE (2026-06-10): RxNav Drug Interaction API has been decommissioned.
+> The endpoint `/REST/interaction/` returns 404 — it is completely absent from rxnav.nlm.nih.gov.
+> OpenFDA Drug Label text mining is the validated replacement. Schema is unchanged.
+> See: `.claude/outputs/phase-00/interaction-validation-report.md`
 
 ### 4. Notification Service
 - Triggered by: cron-job.org hitting a `/cron/check-expiry` endpoint daily

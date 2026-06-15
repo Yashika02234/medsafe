@@ -91,6 +91,38 @@ Using Tailwind's default scale unless design input overrides.
 
 ---
 
+## Compliance — Medical Disclaimer
+
+> **LOCKED** — F-3 complete (2026-06-10). These texts are the single source of truth.
+> Source of truth for code: `frontend/src/lib/legal.ts` → `MEDICAL_DISCLAIMER`
+
+### Disclaimer Text Variants
+
+**Footer variant** (one line — appears on every page):
+> "MedSafe is for informational purposes only. Not a medical device. Consult your doctor before changing any medicine."
+
+**Inline variant** (two sentences — appears below every interaction card and result):
+> "Drug interaction information is sourced from the NIH database and is for general awareness only. Consult your doctor or pharmacist before making any decision about your medicines."
+
+**Full variant** — see `MEDICAL_DISCLAIMER.full` in `frontend/src/lib/legal.ts`
+
+### Required Disclaimer Placements
+
+| Location | Variant |
+|----------|---------|
+| Landing page footer | footer |
+| Login page footer | footer |
+| Dashboard footer (every page) | footer |
+| Every interaction warning card | inline |
+| "No interactions found" result | inline |
+| "Interaction data unavailable" result | inline |
+| `/disclaimer` page | full |
+| Interaction results expandable section | full |
+
+> **Rule:** No interaction result (positive, negative, or unavailable) may be shown to the user without the `inline` disclaimer visible on the same screen. This is non-negotiable.
+
+---
+
 ## Where To Put Final Design Input
 
 When the design ideology is ready:

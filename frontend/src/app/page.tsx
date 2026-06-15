@@ -1,101 +1,197 @@
-import Image from "next/image";
+import Link from "next/link";
+import {
+  Clock,
+  ShieldCheck,
+  Bell,
+  Users,
+  Pill,
+  Search,
+  ArrowRight,
+} from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { MEDICAL_DISCLAIMER } from "@/lib/legal";
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Nav */}
+      <header className="border-b px-4 py-3 flex items-center justify-between max-w-5xl mx-auto w-full">
+        <span className="font-semibold text-lg tracking-tight">MedSafe</span>
+        <nav className="flex items-center gap-2">
+          <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            Sign in
+          </Link>
+          <Link href="/signup" className={buttonVariants({ size: "sm" })}>
+            Get started
+          </Link>
+        </nav>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      <main className="flex-1">
+        {/* Hero */}
+        <section className="px-4 py-16 text-center max-w-2xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-balance leading-tight">
+            Track your medicines.{" "}
+            <span className="text-muted-foreground">
+              Avoid dangerous interactions.
+            </span>
+          </h1>
+          <p className="mt-4 text-muted-foreground text-base sm:text-lg text-balance">
+            Free for Indian households. Works with Indian brand names like
+            Crocin, Dolo, and Thyronorm.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/signup" className={cn(buttonVariants({ size: "lg" }), "gap-2")}>
+              Get started free
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+            <Link href="/login" className={buttonVariants({ size: "lg", variant: "outline" })}>
+              Sign in
+            </Link>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section className="px-4 py-12 bg-muted/40">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-xl font-semibold text-center mb-8">
+              Everything your family medicine cabinet needs
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FeatureCard
+                icon={Clock}
+                title="Expiry tracking"
+                description="Add medicines once. We track expiry dates so you never consume an expired medicine again."
+              />
+              <FeatureCard
+                icon={ShieldCheck}
+                title="Drug interaction checker"
+                description="Checks all medicines in your cabinet against each other. Flags severe, moderate, and mild interactions."
+              />
+              <FeatureCard
+                icon={Bell}
+                title="Expiry alerts"
+                description="Email reminders at 30 days, 7 days, and on expiry day — so you can restock in time."
+              />
+              <FeatureCard
+                icon={Users}
+                title="Family mode"
+                description="One account for your whole family. Manage separate medicine cabinets for parents, spouse, and children."
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section className="px-4 py-12 max-w-2xl mx-auto">
+          <h2 className="text-xl font-semibold text-center mb-8">
+            How it works
+          </h2>
+          <ol className="space-y-6">
+            <Step
+              number={1}
+              icon={Pill}
+              title="Add your medicines"
+              description="Type the name of any Indian brand (Glycomet, Thyronorm, Ecosprin) and MedSafe looks up the generic salt and RxCUI automatically."
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+            <Step
+              number={2}
+              icon={Search}
+              title="Get an instant interaction check"
+              description="Every time you add a medicine, MedSafe checks it against everything else in your cabinet using the NIH drug database."
+            />
+            <Step
+              number={3}
+              icon={Bell}
+              title="Receive expiry alerts"
+              description="We send you email reminders before your medicines expire — no app required, no login needed to act on them."
+            />
+          </ol>
+          <div className="mt-10 text-center">
+            <Link href="/signup" className={cn(buttonVariants({ size: "lg" }), "gap-2")}>
+              Start for free
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Footer */}
+      <footer className="border-t px-4 py-6">
+        <div className="max-w-3xl mx-auto space-y-3 text-center">
+          <p className="text-xs text-muted-foreground">
+            {MEDICAL_DISCLAIMER.footer}
+          </p>
+          <nav className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <Link href="/signup" className="hover:underline">
+              Sign up
+            </Link>
+            <Link href="/login" className="hover:underline">
+              Sign in
+            </Link>
+            <Link href="/disclaimer" className="hover:underline">
+              Medical disclaimer
+            </Link>
+          </nav>
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} MedSafe — built for Indian households
+          </p>
+        </div>
       </footer>
     </div>
+  );
+}
+
+function FeatureCard({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-lg border bg-background p-5 space-y-2">
+      <div className="flex items-center gap-2">
+        <Icon className="h-5 w-5 text-muted-foreground" aria-hidden />
+        <h3 className="font-medium text-sm">{title}</h3>
+      </div>
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function Step({
+  number,
+  icon: Icon,
+  title,
+  description,
+}: {
+  number: number;
+  icon: React.ElementType;
+  title: string;
+  description: string;
+}) {
+  return (
+    <li className="flex gap-4">
+      <div className="flex-none flex flex-col items-center">
+        <div className="h-9 w-9 rounded-full border-2 flex items-center justify-center text-sm font-semibold">
+          {number}
+        </div>
+      </div>
+      <div className="space-y-1 pt-1">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+          <h3 className="font-medium text-sm">{title}</h3>
+        </div>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {description}
+        </p>
+      </div>
+    </li>
   );
 }

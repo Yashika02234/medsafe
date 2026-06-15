@@ -1,0 +1,97 @@
+﻿[
+    {
+        "pair":  "Warfarin+Aspirin",
+        "note":  "Bleeding risk — SEVERE",
+        "detected":  false,
+        "severity":  "—",
+        "latency_ms":  1096
+    },
+    {
+        "pair":  "Warfarin+Ibuprofen",
+        "note":  "Bleeding risk — MODERATE",
+        "detected":  false,
+        "severity":  "—",
+        "latency_ms":  296
+    },
+    {
+        "pair":  "Warfarin+Ciprofloxacin",
+        "note":  "Warfarin potentiation",
+        "detected":  false,
+        "severity":  "—",
+        "latency_ms":  295
+    },
+    {
+        "pair":  "Warfarin+Tramadol",
+        "note":  "Warfarin potentiation",
+        "detected":  false,
+        "severity":  "—",
+        "latency_ms":  296
+    },
+    {
+        "pair":  "Fluoxetine+Tramadol",
+        "note":  "Serotonin syndrome — SEVERE",
+        "detected":  false,
+        "severity":  "—",
+        "latency_ms":  296
+    },
+    {
+        "pair":  "Sertraline+Tramadol",
+        "note":  "Serotonin syndrome",
+        "detected":  false,
+        "severity":  "—",
+        "latency_ms":  296
+    },
+    {
+        "pair":  "Alprazolam+Codeine",
+        "note":  "CNS depression — SEVERE",
+        "detected":  false,
+        "severity":  "—",
+        "latency_ms":  297
+    },
+    {
+        "pair":  "Diazepam+Codeine",
+        "note":  "CNS depression",
+        "detected":  false,
+        "severity":  "—",
+        "latency_ms":  296
+    },
+    {
+        "pair":  "Losartan+Spironolactone",
+        "note":  "Hyperkalemia risk",
+        "detected":  false,
+        "severity":  "—",
+        "latency_ms":  295
+    },
+    {
+        "pair":  "Digoxin+Spironolactone",
+        "note":  "Digoxin toxicity risk",
+        "detected":  false,
+        "severity":  "—",
+        "latency_ms":  295
+    },
+    {
+        "pair":  "Metformin+Omeprazole",
+        "detected":  false,
+        "latency_ms":  344
+    },
+    {
+        "pair":  "Amlodipine+Cetirizine",
+        "detected":  false,
+        "latency_ms":  295
+    },
+    {
+        "pair":  "Pantoprazole+Metformin",
+        "detected":  false,
+        "latency_ms":  298
+    },
+    {
+        "pair":  "Atenolol+Cetirizine",
+        "detected":  false,
+        "latency_ms":  296
+    },
+    {
+        "pair":  "Rosuvastatin+Pantoprazole",
+        "detected":  false,
+        "latency_ms":  295
+    }
+]

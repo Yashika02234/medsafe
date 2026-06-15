@@ -20,7 +20,13 @@
 
 ## Logged Defects
 
-*No defects logged yet. This file will be populated as development progresses.*
+### 2026-06-10
+
+**Problem:** RxNav Drug Interaction API (`rxnav.nlm.nih.gov/REST/interaction/`) returns 404 for all endpoints.
+
+**Cause:** The interaction service has been decommissioned from rxnav.nlm.nih.gov. The base API (RxNorm name resolution) still works, but the interaction subpath no longer exists — it is absent from the full resource list returned by `GET /REST/`.
+
+**Rule:** Never use `rxnav.nlm.nih.gov/REST/interaction/` — it does not exist. Use `api.fda.gov/drug/label.json` for drug interaction data instead (text mining approach, validated 7/10 detection, 0 false positives). See: `.claude/outputs/phase-00/interaction-validation-report.md`.
 
 ---
 

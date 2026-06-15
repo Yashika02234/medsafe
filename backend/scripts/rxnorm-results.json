@@ -1,0 +1,352 @@
+﻿[
+    {
+        "name":  "Paracetamol",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "161",
+        "latency_ms":  961
+    },
+    {
+        "name":  "Ibuprofen",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "5640",
+        "latency_ms":  307
+    },
+    {
+        "name":  "Aspirin",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "1191",
+        "latency_ms":  308
+    },
+    {
+        "name":  "Metformin",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "6809",
+        "latency_ms":  298
+    },
+    {
+        "name":  "Glimepiride",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "25789",
+        "latency_ms":  302
+    },
+    {
+        "name":  "Atorvastatin",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "83367",
+        "latency_ms":  308
+    },
+    {
+        "name":  "Amlodipine",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "17767",
+        "latency_ms":  304
+    },
+    {
+        "name":  "Telmisartan",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "73494",
+        "latency_ms":  334
+    },
+    {
+        "name":  "Pantoprazole",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "40790",
+        "latency_ms":  309
+    },
+    {
+        "name":  "Omeprazole",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "7646",
+        "latency_ms":  298
+    },
+    {
+        "name":  "Azithromycin",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "18631",
+        "latency_ms":  295
+    },
+    {
+        "name":  "Ciprofloxacin",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "2551",
+        "latency_ms":  296
+    },
+    {
+        "name":  "Cephalexin",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "2231",
+        "latency_ms":  304
+    },
+    {
+        "name":  "Cetirizine",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "20610",
+        "latency_ms":  298
+    },
+    {
+        "name":  "Montelukast",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "88249",
+        "latency_ms":  320
+    },
+    {
+        "name":  "Fexofenadine",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "87636",
+        "latency_ms":  301
+    },
+    {
+        "name":  "Alprazolam",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "596",
+        "latency_ms":  308
+    },
+    {
+        "name":  "Diazepam",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "3322",
+        "latency_ms":  302
+    },
+    {
+        "name":  "Atenolol",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "1202",
+        "latency_ms":  302
+    },
+    {
+        "name":  "Metoprolol",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "6918",
+        "latency_ms":  306
+    },
+    {
+        "name":  "Rosuvastatin",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "301542",
+        "latency_ms":  298
+    },
+    {
+        "name":  "Clopidogrel",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "32968",
+        "latency_ms":  304
+    },
+    {
+        "name":  "Losartan",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "52175",
+        "latency_ms":  341
+    },
+    {
+        "name":  "Hydrochlorothiazide",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "5487",
+        "latency_ms":  327
+    },
+    {
+        "name":  "Ranitidine",
+        "group":  "A",
+        "resolved":  true,
+        "rxcui":  "9143",
+        "latency_ms":  424
+    },
+    {
+        "name":  "Amoxycillin",
+        "group":  "B",
+        "resolved":  true,
+        "rxcui":  "723",
+        "latency_ms":  370
+    },
+    {
+        "name":  "Salbutamol",
+        "group":  "B",
+        "resolved":  true,
+        "rxcui":  "435",
+        "latency_ms":  297
+    },
+    {
+        "name":  "Levosalbutamol",
+        "group":  "B",
+        "resolved":  true,
+        "rxcui":  "237159",
+        "latency_ms":  303
+    },
+    {
+        "name":  "Thyroxine",
+        "group":  "B",
+        "resolved":  true,
+        "rxcui":  "10582",
+        "latency_ms":  294
+    },
+    {
+        "name":  "Lignocaine",
+        "group":  "B",
+        "resolved":  true,
+        "rxcui":  "6387",
+        "latency_ms":  302
+    },
+    {
+        "name":  "Adrenaline",
+        "group":  "B",
+        "resolved":  true,
+        "rxcui":  "3992",
+        "latency_ms":  302
+    },
+    {
+        "name":  "Noradrenaline",
+        "group":  "B",
+        "resolved":  true,
+        "rxcui":  "7512",
+        "latency_ms":  301
+    },
+    {
+        "name":  "Pethidine",
+        "group":  "B",
+        "resolved":  true,
+        "rxcui":  "6754",
+        "latency_ms":  301
+    },
+    {
+        "name":  "Frusemide",
+        "group":  "B",
+        "resolved":  true,
+        "rxcui":  "4603",
+        "latency_ms":  302
+    },
+    {
+        "name":  "Clonazepam",
+        "group":  "B",
+        "resolved":  true,
+        "rxcui":  "2598",
+        "latency_ms":  299
+    },
+    {
+        "name":  "Aceclofenac",
+        "group":  "C",
+        "resolved":  true,
+        "rxcui":  "16689",
+        "latency_ms":  309
+    },
+    {
+        "name":  "Nimesulide",
+        "group":  "C",
+        "resolved":  true,
+        "rxcui":  "53694",
+        "latency_ms":  356
+    },
+    {
+        "name":  "Doxofylline",
+        "group":  "C",
+        "resolved":  false,
+        "rxcui":  null,
+        "latency_ms":  354
+    },
+    {
+        "name":  "Etoricoxib",
+        "group":  "C",
+        "resolved":  true,
+        "rxcui":  "307296",
+        "latency_ms":  304
+    },
+    {
+        "name":  "Torsemide",
+        "group":  "C",
+        "resolved":  true,
+        "rxcui":  "38413",
+        "latency_ms":  315
+    },
+    {
+        "name":  "Sertraline",
+        "group":  "D",
+        "resolved":  true,
+        "rxcui":  "36437",
+        "latency_ms":  296
+    },
+    {
+        "name":  "Fluoxetine",
+        "group":  "D",
+        "resolved":  true,
+        "rxcui":  "4493",
+        "latency_ms":  301
+    },
+    {
+        "name":  "Amitriptyline",
+        "group":  "D",
+        "resolved":  true,
+        "rxcui":  "704",
+        "latency_ms":  297
+    },
+    {
+        "name":  "Tramadol",
+        "group":  "D",
+        "resolved":  true,
+        "rxcui":  "10689",
+        "latency_ms":  306
+    },
+    {
+        "name":  "Codeine",
+        "group":  "D",
+        "resolved":  true,
+        "rxcui":  "2670",
+        "latency_ms":  307
+    },
+    {
+        "name":  "Warfarin",
+        "group":  "D",
+        "resolved":  true,
+        "rxcui":  "11289",
+        "latency_ms":  298
+    },
+    {
+        "name":  "Digoxin",
+        "group":  "D",
+        "resolved":  true,
+        "rxcui":  "3407",
+        "latency_ms":  297
+    },
+    {
+        "name":  "Lisinopril",
+        "group":  "D",
+        "resolved":  true,
+        "rxcui":  "29046",
+        "latency_ms":  309
+    },
+    {
+        "name":  "Ramipril",
+        "group":  "D",
+        "resolved":  true,
+        "rxcui":  "35296",
+        "latency_ms":  317
+    },
+    {
+        "name":  "Spironolactone",
+        "group":  "D",
+        "resolved":  true,
+        "rxcui":  "9997",
+        "latency_ms":  302
+    }
+]

@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Phase 0 — Planning & Data Validation
+Phase 1 — Foundation (Auth + DB + Deploy)
 
-Status: IN PROGRESS
+Status: 🔄 IN PROGRESS
 
 ---
 
@@ -18,10 +18,10 @@ Status: IN PROGRESS
 - [x] Master roadmap finalized
 - [x] Project backlog created (all phases, all tasks)
 - [x] Design system placeholder created
-- [ ] CDSCO dataset collected and cleaned
-- [ ] RxNorm resolution validated
-- [ ] RxNav interactions validated
-- [ ] Go/no-go decision made
+- [x] CDSCO dataset collected and cleaned
+- [x] RxNorm resolution validated
+- [x] RxNav interactions validated (replaced by OpenFDA — RxNav decommissioned)
+- [x] Go/no-go decision made — GO WITH MODIFICATIONS (2026-06-10)
 
 ---
 
@@ -32,66 +32,29 @@ Status: IN PROGRESS
 
 ### Ordered Task Sequence
 
-| Order | Task ID | Task | Status | Blockers |
-|-------|---------|------|--------|----------|
-| 0 | BOOTSTRAP | Create GitHub repo + project structure + VS Code setup | ✅ | None — do this first |
-| 1 | P0-T0 | Write final prisma/schema.prisma per architecture baseline | ✅ | Bootstrap |
-| 1b | P1-T1 | Initialize Next.js 14 project in frontend/ | ✅ | Bootstrap |
-| 2 | P0-T0b | Write .env.example with all required vars + comments | ⬜ | P0-T0 |
-| 3 | P0-T0c | ~~Create GitHub repo~~ (moved into Bootstrap above) | ✅ | — |
-| 4 | P0-T0d | Write consent screen text and medical disclaimer text | ⬜ | None |
-| 5 | P0-T1 | Research + source CDSCO dataset (3,000+ entries target) | ⬜ | None |
-| 6 | P0-T2 | Clean + structure CDSCO dataset | ⬜ | P0-T1 |
-| 7 | P0-T3 | Validate RxNorm API: resolution rate + latency measurement | ⬜ | P0-T2 |
-| 8 | P0-T4 | Validate RxNav API: known interaction pairs end-to-end | ⬜ | P0-T3 |
-| 9 | P0-T5 | Complete Phase 0 Lock Checklist + formal go/no-go decision | ⬜ | All above |
-| 10 | C-2 | ⚠️ Create Supabase project in ap-south-1 (Mumbai) — IRREVERSIBLE | ⬜ | P0-T5 go=GO |
+## Phase 1 Sprint — Foundation
 
-**Gate G0:** All checklist items in `phase-0-lock-checklist.md` checked, go/no-go signed off → Phase 1 unlocked
-
----
-
-## Next Phase Preview — Phase 1 (Foundation)
-
-| Task ID | Task | Effort |
+| Task ID | Task | Status |
 |---------|------|--------|
-| P1-T1 | Initialize Next.js Project | 1 session |
-| P1-T2 | Set Up Supabase & Prisma | 1 session |
-| P1-T3 | Build Auth API Layer | 1 session |
-| P1-T4 | Build Auth UI Pages | 1 session |
-| P1-T5 | Build Dashboard Layout Shell | 1 session |
-| P1-T6 | Landing Page & Deployment | 1 session |
-| P1-T7 | CI/CD & Cleanup | 1 session |
+| P1-T1 | Initialize Next.js Project | ✅ Complete |
+| P1-T2 | Set Up Supabase & Prisma | ✅ Complete |
+| P1-T3 | Build Auth API Layer | ✅ Complete |
+| P1-T4 | Build Auth UI Pages | ✅ Complete |
+| P1-T5 | Build Dashboard Layout Shell | ✅ Complete |
+| P1-T6 | Landing Page & Deployment | ⬜ |
+| P1-T7 | CI/CD & Cleanup | ⬜ |
 
 ---
 
 ## Current Task
 
-**BOOTSTRAP: Create GitHub Repository and Project Structure**
-
-Execution plan: `.claude/outputs/phase-00/bootstrap-plan.md`
-
-Execute Phases A through L in the bootstrap plan (in order):
-- A: Machine setup (git global config, Node.js 20)
-- B: Create GitHub repository (public, no auto-init)
-- C: Clone locally
-- D: Root config files (.gitattributes first, then .gitignore, .nvmrc, README)
-- E: Directory structure
-- F: CLAUDE.md and _state.md at root
-- G: Copy .claude/ memory system (all 28 files)
-- H: Supporting files (prisma/README, .github/, .vscode/)
-- I: Initial commit and push
-- J: Connect Vercel (root dir = 'frontend')
-- K: Post-bootstrap verification
-- L: Update _state.md
-
-Critical: `.gitattributes` must be created BEFORE any other files (line ending policy).
+**P1-T6: Landing Page & Deployment**
 
 ---
 
 ## Next Task
 
-P0-T0b: Write frontend/.env.example with all required environment variables and comments
+P1-T7: CI/CD & Cleanup
 
 ---
 
@@ -140,6 +103,7 @@ P0-T0b: Write frontend/.env.example with all required environment variables and 
 - DPDPA 2023 compliance from Phase 1
 - Supabase in ap-south-1 (Mumbai)
 - FastAPI deferred to Phase 5 (OCR only)
+- **INTERACTION ENGINE: RxNav Drug Interaction API DECOMMISSIONED** — OpenFDA label text mining replaces it. 7/10 detection, 0 false positives. Schema unchanged. (P0-T4, 2026-06-10)
 
 ---
 
@@ -147,8 +111,8 @@ P0-T0b: Write frontend/.env.example with all required environment variables and 
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 0 | Planning & Data Validation | 🟡 In Progress |
-| 1 | Foundation (Auth + DB + Deploy) | ⬜ Not Started |
+| 0 | Planning & Data Validation | ✅ Complete |
+| 1 | Foundation (Auth + DB + Deploy) | 🔄 In Progress |
 | 2 | Medicine Cabinet (Core CRUD) | ⬜ Not Started |
 | 3 | Drug Interaction Engine (KEY DIFFERENTIATOR) | ⬜ Not Started |
 | 4 | Notifications & Expiry Alerts | ⬜ Not Started |
@@ -184,8 +148,100 @@ P0-T0b: Write frontend/.env.example with all required environment variables and 
 - P0-T0 complete: wrote prisma/schema.prisma (8 models), post-migration.sql (10 CHECK constraints, 2 partial unique indexes, 2 performance indexes), rls-policies.sql (RLS on 6 tables)
 - All 6 P0-T0 cross-checks passed
 - Lock checklist updated: D-1 through D-6 marked addressed, D-3 text corrected (junction table replaces arrays), C-1/H-1/H-3 marked complete
-- Next: P0-T0b (frontend/.env.example)
+- P1-T1 complete (Next.js 14 initialized) — CSS conflict fixed: removed @import "shadcn/tailwind.css" from globals.css, removed outline-ring/50 (v4-only), expanded tailwind.config.ts with all shadcn color tokens + darkMode + borderRadius + fontFamily + ringWidth
+- Dev server running at localhost:3001, HTTP 200 confirmed
+- P0-T0b complete: wrote frontend/.env.example (Supabase, Prisma dual-URL, FastAPI, Resend, CRON_SECRET, SENTRY_DSN)
+- P0-T0d complete: consent screen text + medical disclaimer — .claude/outputs/phase-00/consent-screen-text.md, design-system.md compliance section, frontend/src/lib/legal.ts
+- Lock checklist updated: F-2, F-3, H-4 marked complete
+- P0-T1 complete: sourced junioralive/Indian-Medicine-Dataset (253,973 entries, 44% combo drugs, 0% missing salt, 8/8 categories) — downloaded to backend/data/cdsco_raw.csv (31MB, git-ignored)
+- Lock checklist B-1, B-2 marked complete
 
 ---
 
-*Last updated: 2026-06-10*
+### Session 13 — 2026-06-15
+
+- P1-T5 complete: Dashboard Layout Shell
+  - src/components/shared/BottomNav.tsx: 5-tab fixed bottom nav (Home, Medicines, Interactions, Family, Settings), active state via usePathname, 44px touch targets, aria-current
+  - src/app/(dashboard)/layout.tsx: max-w-lg centered, pb-24 clears nav, MEDICAL_DISCLAIMER.footer on every page
+  - src/app/(dashboard)/dashboard/page.tsx: server component, fetches user via Supabase, greeting with first name, 3 summary cards (—/placeholder), disabled Add medicine CTA
+  - Stub pages: /medicines, /interactions, /family, /settings — "Coming in Phase X" with icon
+  - TypeScript: zero errors
+
+### Session 12 — 2026-06-15
+
+- P1-T4 complete: Auth UI Pages
+  - Installed shadcn components: button, input, label, card, checkbox
+  - src/lib/utils.ts: cn() utility auto-created by shadcn CLI
+  - src/app/(auth)/layout.tsx: centered card layout, MEDICAL_DISCLAIMER.footer in footer
+  - src/app/(auth)/login/page.tsx: email + password form, Zod client validation, generic error message, redirect to /dashboard on success
+  - src/app/(auth)/signup/page.tsx: name + email + password + CONSENT_SCREEN terms checkbox (required) + notifications checkbox (optional), DPDPA-compliant, handles email confirmation pending state
+  - Zod v4 fix: errorMap → error in literal schema
+  - TypeScript: zero errors
+
+### Session 11 — 2026-06-15
+
+- P1-T3 complete: Auth API Layer
+  - Installed zod v4 for request validation
+  - src/middleware.ts: session refresh on every request, redirect unauthenticated → /login, redirect authenticated away from /login /signup
+  - src/lib/auth.ts: getSession() + requireAuth() helpers for all protected API routes
+  - POST /api/auth/signup: validates email/password/name/consent, calls supabase.auth.signUp(), creates users + family_members (self) in Prisma transaction
+  - POST /api/auth/login: validates credentials, generic error message (no email enumeration)
+  - POST /api/auth/logout: calls supabase.auth.signOut()
+  - GET /api/auth/callback: exchanges Supabase email confirmation code for session, redirects to /dashboard
+  - TypeScript: zero errors (npx tsc --noEmit clean)
+- NOTE for user: add /api/auth/callback to Supabase Dashboard → Auth → URL Configuration → Redirect URLs
+
+### Session 10 — 2026-06-15
+
+- C-2 complete: Supabase project created in ap-south-1 (Mumbai), project ref: paekzsfilthxwoedllyq
+- C-3 complete: Vercel connected to GitHub repo
+- C-6 complete: CRON_SECRET generated and stored in frontend/.env.local
+- P1-T2 complete: Supabase & Prisma set up
+  - Installed @supabase/supabase-js, @supabase/ssr, prisma@5, @prisma/client@5 (v7 downgraded — breaking change in datasource config)
+  - prisma/schema.prisma: generator output set to ../frontend/node_modules/.prisma/client
+  - prisma/.env created (git-ignored) for Prisma CLI env var loading
+  - package.json: postinstall + db:migrate scripts added; prisma.schema path configured
+  - Migration 20260615105343_init applied — all 8 tables created in Supabase
+  - post-migration.sql applied: 10 CHECK constraints + 2 partial unique indexes + 2 perf indexes
+  - rls-policies.sql applied: RLS enabled on 6 user-data tables, verified via pg_tables SELECT
+  - frontend/src/lib/prisma.ts: singleton Prisma client created
+  - frontend/src/lib/supabase/client.ts: browser Supabase client created
+  - frontend/src/lib/supabase/server.ts: server-side Supabase client created (SSR-safe)
+- Phase 1 status updated to IN PROGRESS
+
+### Session 9 — 2026-06-10 (continued)
+- P0-T5 complete: Phase 0 Lock Checklist reviewed, go/no-go signed off
+- Decision: GO WITH MODIFICATIONS
+- Modification 1: OpenFDA label text mining replaces decommissioned RxNav interaction API
+- Modification 2: Synonym table downgraded to optional (RxNorm search=2 handles all Indian variants)
+- Phase 0 status updated to COMPLETE in _state.md
+- Blockers before Phase 1: User must complete C-2 (Supabase Mumbai), C-3 (Vercel), C-6 (CRON_SECRET)
+
+### Session 8 — 2026-06-10 (continued)
+- P0-T4 complete: RxNav Drug Interaction API DECOMMISSIONED — all /REST/interaction/ paths return 404
+- Validated OpenFDA label text mining as replacement: 7/10 known pairs detected (threshold), 0/5 false positives
+- 3 misses are class-based interactions (SSRI/opioid/ARB class — Phase 3 fix via drug class synonyms)
+- OpenFDA latency: ~850-2500ms per pair, but must cache label text — subsequent checks sub-ms
+- Architecture change documented: architecture.md updated, defects.md entry added
+- Report: .claude/outputs/phase-00/interaction-validation-report.md
+
+### Session 7 — 2026-06-10 (continued)
+- P0-T3 complete: RxNorm API validated — 50 sequential calls from India
+- Resolution rate: 49/50 = 98% (threshold was ≥ 40%)
+- Latency: p50=303ms, p95=370ms, p99=961ms cold start (threshold was p95 < 800ms)
+- All Indian spelling variants (Amoxycillin, Salbutamol, Thyroxine, etc.) resolve via search=2
+- Only failure: Doxofylline (niche theophylline analogue, not FDA-approved, no RxCUI)
+- Gemini fallback NOT needed (rate >> 40%)
+- Synonym table (B-3) now optional safety net, not critical
+- Report: .claude/outputs/phase-00/api-latency.md
+
+### Session 6 — 2026-06-10 (continued)
+- P0-T2 complete: wrote backend/scripts/clean_cdsco.js, ran cleaning pipeline
+- Input: 253,973 rows → Output: 242,145 entries (7,905 discontinued + 4 non-allopathy + 3,919 exact dupes removed)
+- frontend/public/data/cdsco.json: 22.17 MB uncompressed, ~5.54 MB gzip — committed to git
+- Spot-checks passed: Dolo 650, Crocin, Thyronorm, Combiflam, Glycomet-GP, Ecosprin all correct
+- Phase 2 Fuse.js note added: pre-built index + minMatchCharLength:3 + threshold:0.35
+
+---
+
+*Last updated: 2026-06-15*

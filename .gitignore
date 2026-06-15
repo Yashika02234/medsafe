@@ -15,6 +15,10 @@ dist/
 .env.production.local
 .env.*.local
 
+# Large data files — raw datasets are not committed to git (too large)
+# The processed/cleaned output (frontend/public/data/cdsco.json) IS committed.
+backend/data/
+
 # Python / FastAPI
 __pycache__/
 *.pyc

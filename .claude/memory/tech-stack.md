@@ -38,9 +38,9 @@
 
 | API | Provider | Purpose | Rate Limit | Auth |
 |-----|----------|---------|------------|------|
-| RxNav Interaction API | NIH | Drug interaction lookup | No hard limit | None needed |
+| ~~RxNav Interaction API~~ | ~~NIH~~ | ~~DECOMMISSIONED — do not use~~ | — | — |
 | RxNorm API | NIH | Drug name normalization → RxCUI | No hard limit | None needed |
-| OpenFDA Drug API | FDA | Drug labels, ingredients, adverse events | 240 req/min | None needed |
+| OpenFDA Drug Label API | FDA | **Primary interaction source** — label text mining | 240 req/min | None needed |
 
 ## Local Data
 
