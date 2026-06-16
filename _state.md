@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Phase 1 — Foundation (Auth + DB + Deploy)
+Phase 2 — Medicine Cabinet (Core CRUD)
 
-Status: 🔄 IN PROGRESS
+Status: ⬜ NOT STARTED
 
 ---
 
@@ -41,20 +41,20 @@ Status: 🔄 IN PROGRESS
 | P1-T3 | Build Auth API Layer | ✅ Complete |
 | P1-T4 | Build Auth UI Pages | ✅ Complete |
 | P1-T5 | Build Dashboard Layout Shell | ✅ Complete |
-| P1-T6 | Landing Page & Deployment | ⬜ |
-| P1-T7 | CI/CD & Cleanup | ⬜ |
+| P1-T6 | Landing Page & Deployment | ✅ Complete |
+| P1-T7 | CI/CD & Cleanup | ✅ Complete |
 
 ---
 
 ## Current Task
 
-**P1-T6: Landing Page & Deployment**
+Phase 2 — Medicine Cabinet (Core CRUD)
 
 ---
 
 ## Next Task
 
-P1-T7: CI/CD & Cleanup
+P2-T1: CDSCO Fuse.js search + Add Medicine form
 
 ---
 
@@ -112,7 +112,7 @@ P1-T7: CI/CD & Cleanup
 | Phase | Name | Status |
 |-------|------|--------|
 | 0 | Planning & Data Validation | ✅ Complete |
-| 1 | Foundation (Auth + DB + Deploy) | 🔄 In Progress |
+| 1 | Foundation (Auth + DB + Deploy) | ✅ Complete |
 | 2 | Medicine Cabinet (Core CRUD) | ⬜ Not Started |
 | 3 | Drug Interaction Engine (KEY DIFFERENTIATOR) | ⬜ Not Started |
 | 4 | Notifications & Expiry Alerts | ⬜ Not Started |
@@ -157,6 +157,33 @@ P1-T7: CI/CD & Cleanup
 - Lock checklist B-1, B-2 marked complete
 
 ---
+
+### Session 15 — 2026-06-16
+
+- Midnight Safe dark theme implemented across all screens
+  - globals.css: full `--ms-*` token set, body font, animations (fadeUp, pulseAlert, scanLine, shimmer)
+  - landing page, auth layout, login, signup — all rewritten with native HTML + Tailwind arbitrary values (no shadcn)
+  - BottomNav: 5-tab layout (Home | Cabinet | + FAB | Alerts | Family), no inline styles, TypeScript clean
+  - Dashboard home: greeting, family chips, 3-col stats grid, expiring soon empty state
+  - /medicines: search bar, filter chips, empty state
+  - /interactions: filter tabs, empty state, preview alert cards (variant-based Tailwind, no inline styles)
+  - /family: self card, add member card, settings gear → /settings
+  - /settings: profile card, notification toggles, sign out button (client component)
+- P1-T7 complete: CI/CD & Cleanup
+  - .github/workflows/ci.yml: type check → lint → build on push/PR to main
+  - Node 20, npm ci, dummy env vars for compilation-only CI
+  - .github/workflows/.gitkeep placeholder deleted
+- Phase 1 marked COMPLETE. Phase 2 begins next.
+
+### Session 14 — 2026-06-15
+
+- P1-T6 complete: Landing Page & Deployment
+  - src/app/page.tsx: hero + 4 feature cards + 3-step how-it-works + footer with MEDICAL_DISCLAIMER.footer
+  - src/app/disclaimer/page.tsx: full MEDICAL_DISCLAIMER.full content, back link to /
+  - Fixed: Base UI Button doesn't support asChild — replaced with buttonVariants applied directly to Link
+  - Deleted spurious root package.json + node_modules (Prisma artifact from first generate run)
+  - Committed 51 files (Phase 1 complete), pushed to GitHub
+  - Vercel auto-deploy triggered on push to main
 
 ### Session 13 — 2026-06-15
 

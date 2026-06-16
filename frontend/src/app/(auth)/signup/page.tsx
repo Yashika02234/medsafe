@@ -4,17 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { CONSENT_SCREEN, MEDICAL_DISCLAIMER } from "@/lib/legal";
 
 const SignupSchema = z.object({
@@ -24,9 +13,7 @@ const SignupSchema = z.object({
   consent_given: z.literal(true, "You must accept the terms to continue"),
 });
 
-type FormErrors = Partial<
-  Record<keyof z.infer<typeof SignupSchema>, string>
->;
+type FormErrors = Partial<Record<keyof z.infer<typeof SignupSchema>, string>>;
 
 export default function SignupPage() {
   const router = useRouter();
@@ -67,13 +54,7 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          consent_given: true,
-          wants_notifications: wantsNotifications,
-        }),
+        body: JSON.stringify({ name, email, password, consent_given: true, wants_notifications: wantsNotifications }),
       });
       const data = await res.json();
 
@@ -97,172 +78,154 @@ export default function SignupPage() {
 
   if (confirmationPending) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Check your email</CardTitle>
-          <CardDescription>
-            We sent a confirmation link to <strong>{email}</strong>. Click it to
-            activate your account.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Didn&apos;t receive it? Check your spam folder, or{" "}
-            <button
-              type="button"
-              className="underline underline-offset-4 hover:text-foreground"
-              onClick={() => setConfirmationPending(false)}
-            >
-              try again
-            </button>
-            .
-          </p>
-        </CardContent>
-      </Card>
+      <div className="bg-[var(--ms-surf)] rounded-2xl p-6 border border-[var(--ms-bord)]">
+        <div className="w-12 h-12 rounded-2xl bg-[var(--ms-grn-bg)] flex items-center justify-center mb-4">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#2ECC8F">
+            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-[var(--ms-txt)] mb-2">Check your email</h2>
+        <p className="text-sm text-[var(--ms-txt2)] leading-relaxed mb-4">
+          We sent a confirmation link to <strong className="text-[var(--ms-txt)]">{email}</strong>. Click it to activate your account.
+        </p>
+        <p className="text-sm text-[var(--ms-txt2)]">
+          Didn&apos;t receive it?{" "}
+          <button
+            type="button"
+            className="text-[var(--ms-acc)] font-semibold bg-transparent border-none cursor-pointer p-0"
+            onClick={() => setConfirmationPending(false)}
+          >
+            Try again
+          </button>
+        </p>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">Create your account</CardTitle>
-        <CardDescription>
-          Free medicine tracker for your household
-        </CardDescription>
-      </CardHeader>
+    <div className="pb-8">
+      <h1 className="text-[28px] font-extrabold text-[var(--ms-txt)] tracking-[-0.8px] mb-2">
+        Create account
+      </h1>
+      <p className="text-[15px] text-[var(--ms-txt2)] mb-8 leading-snug">
+        Start protecting your family&apos;s medicines today
+      </p>
 
-      <CardContent>
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Priya Sharma"
-              autoComplete="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              aria-describedby={errors.name ? "name-error" : undefined}
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        {/* Name */}
+        <div>
+          <label htmlFor="name" className="block text-[13px] font-medium text-[var(--ms-txt2)] mb-2">
+            Full name
+          </label>
+          <input
+            id="name"
+            type="text"
+            placeholder="e.g. Arjun Kumar"
+            autoComplete="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-describedby={errors.name ? "name-error" : undefined}
+            className="w-full bg-[var(--ms-surf2)] border border-[var(--ms-bord)] rounded-2xl px-4 py-[15px] text-base text-[var(--ms-txt)] placeholder:text-[var(--ms-txt3)] outline-none focus:border-[var(--ms-acc)] transition-colors"
+          />
+          {errors.name && <p id="name-error" className="mt-1.5 text-sm text-[var(--ms-red)]">{errors.name}</p>}
+        </div>
+
+        {/* Email */}
+        <div>
+          <label htmlFor="email" className="block text-[13px] font-medium text-[var(--ms-txt2)] mb-2">
+            Email address
+          </label>
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-describedby={errors.email ? "email-error" : undefined}
+            className="w-full bg-[var(--ms-surf2)] border border-[var(--ms-bord)] rounded-2xl px-4 py-[15px] text-base text-[var(--ms-txt)] placeholder:text-[var(--ms-txt3)] outline-none focus:border-[var(--ms-acc)] transition-colors"
+          />
+          {errors.email && <p id="email-error" className="mt-1.5 text-sm text-[var(--ms-red)]">{errors.email}</p>}
+        </div>
+
+        {/* Password */}
+        <div>
+          <label htmlFor="password" className="block text-[13px] font-medium text-[var(--ms-txt2)] mb-2">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            placeholder="8+ characters"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-describedby={errors.password ? "password-error" : undefined}
+            className="w-full bg-[var(--ms-surf2)] border border-[var(--ms-bord)] rounded-2xl px-4 py-[15px] text-base text-[var(--ms-txt)] placeholder:text-[var(--ms-txt3)] outline-none focus:border-[var(--ms-acc)] transition-colors"
+          />
+          {errors.password && <p id="password-error" className="mt-1.5 text-sm text-[var(--ms-red)]">{errors.password}</p>}
+        </div>
+
+        {/* Consent — DPDPA 2023 */}
+        <div className="bg-[var(--ms-surf)] rounded-2xl p-4 border border-[var(--ms-bord)] flex flex-col gap-3">
+          <p className="text-[13px] font-semibold text-[var(--ms-txt)]">{CONSENT_SCREEN.title}</p>
+          <p className="text-xs text-[var(--ms-txt2)] leading-relaxed">{CONSENT_SCREEN.intro}</p>
+          <p className="text-xs text-[var(--ms-txt2)] leading-relaxed">{CONSENT_SCREEN.medicalNotice}</p>
+
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              id="consent"
+              type="checkbox"
+              checked={consentGiven}
+              onChange={(e) => setConsentGiven(e.target.checked)}
+              aria-describedby={errors.consent_given ? "consent-error" : undefined}
+              className="mt-0.5 accent-[#4F8EFF] w-4 h-4 flex-shrink-0"
             />
-            {errors.name && (
-              <p id="name-error" className="text-sm text-destructive">
-                {errors.name}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-describedby={errors.email ? "email-error" : undefined}
-            />
-            {errors.email && (
-              <p id="email-error" className="text-sm text-destructive">
-                {errors.email}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="At least 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              aria-describedby={errors.password ? "password-error" : undefined}
-            />
-            {errors.password && (
-              <p id="password-error" className="text-sm text-destructive">
-                {errors.password}
-              </p>
-            )}
-          </div>
-
-          {/* Consent section — DPDPA 2023 compliance */}
-          <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
-            <p className="text-sm font-medium">{CONSENT_SCREEN.title}</p>
-            <p className="text-xs text-muted-foreground">{CONSENT_SCREEN.intro}</p>
-            <p className="text-xs text-muted-foreground">
-              {CONSENT_SCREEN.medicalNotice}
-            </p>
-
-            <div className="space-y-3 pt-1">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="consent"
-                  checked={consentGiven}
-                  onCheckedChange={(checked) =>
-                    setConsentGiven(checked === true)
-                  }
-                  aria-describedby={
-                    errors.consent_given ? "consent-error" : undefined
-                  }
-                />
-                <Label
-                  htmlFor="consent"
-                  className="text-xs leading-relaxed cursor-pointer"
-                >
-                  {CONSENT_SCREEN.checkboxes.terms}
-                </Label>
-              </div>
-              {errors.consent_given && (
-                <p id="consent-error" className="text-sm text-destructive">
-                  {errors.consent_given}
-                </p>
-              )}
-
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="notifications"
-                  checked={wantsNotifications}
-                  onCheckedChange={(checked) =>
-                    setWantsNotifications(checked === true)
-                  }
-                />
-                <Label
-                  htmlFor="notifications"
-                  className="text-xs leading-relaxed cursor-pointer"
-                >
-                  {CONSENT_SCREEN.checkboxes.notifications}
-                </Label>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            {MEDICAL_DISCLAIMER.footer}
-          </p>
-
-          {serverError && (
-            <p role="alert" className="text-sm text-destructive">
-              {serverError}
-            </p>
+            <span className="text-xs text-[var(--ms-txt2)] leading-relaxed">
+              {CONSENT_SCREEN.checkboxes.terms}
+            </span>
+          </label>
+          {errors.consent_given && (
+            <p id="consent-error" className="text-sm text-[var(--ms-red)]">{errors.consent_given}</p>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creating account…" : "Create account"}
-          </Button>
-        </form>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              id="notifications"
+              type="checkbox"
+              checked={wantsNotifications}
+              onChange={(e) => setWantsNotifications(e.target.checked)}
+              className="mt-0.5 accent-[#4F8EFF] w-4 h-4 flex-shrink-0"
+            />
+            <span className="text-xs text-[var(--ms-txt2)] leading-relaxed">
+              {CONSENT_SCREEN.checkboxes.notifications}
+            </span>
+          </label>
+        </div>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            Sign in
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+        <p className="text-xs text-[var(--ms-txt3)] leading-relaxed">{MEDICAL_DISCLAIMER.footer}</p>
+
+        {serverError && (
+          <p role="alert" className="text-sm text-[var(--ms-red)] bg-[var(--ms-red-bg)] rounded-xl px-4 py-3">
+            {serverError}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-[var(--ms-acc)] text-white rounded-2xl py-[17px] text-[17px] font-semibold tracking-[-0.3px] disabled:opacity-50 mt-1"
+        >
+          {loading ? "Creating account…" : "Create My Account"}
+        </button>
+      </form>
+
+      <p className="mt-5 text-center text-[14px] text-[var(--ms-txt2)]">
+        Already have an account?{" "}
+        <Link href="/login" className="text-[var(--ms-acc)] font-semibold no-underline">
+          Sign in
+        </Link>
+      </p>
+    </div>
   );
 }

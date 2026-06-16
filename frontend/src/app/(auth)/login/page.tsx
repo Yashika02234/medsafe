@@ -4,16 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 const LoginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
@@ -70,67 +60,77 @@ export default function LoginPage() {
   }
 
   return (
-    <Card>
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">Welcome back</CardTitle>
-        <CardDescription>Sign in to your MedSafe account</CardDescription>
-      </CardHeader>
+    <div className="pb-8">
+      <h1 className="text-[28px] font-extrabold text-[var(--ms-txt)] tracking-[-0.8px] mb-2">
+        Welcome back
+      </h1>
+      <p className="text-[15px] text-[var(--ms-txt2)] mb-8 leading-snug">
+        Sign in to your MedSafe account
+      </p>
 
-      <CardContent>
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-describedby={errors.email ? "email-error" : undefined}
-            />
-            {errors.email && (
-              <p id="email-error" className="text-sm text-destructive">
-                {errors.email}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              aria-describedby={errors.password ? "password-error" : undefined}
-            />
-            {errors.password && (
-              <p id="password-error" className="text-sm text-destructive">
-                {errors.password}
-              </p>
-            )}
-          </div>
-
-          {serverError && (
-            <p role="alert" className="text-sm text-destructive">
-              {serverError}
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        <div>
+          <label htmlFor="email" className="block text-[13px] font-medium text-[var(--ms-txt2)] mb-2">
+            Email address
+          </label>
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-describedby={errors.email ? "email-error" : undefined}
+            className="w-full bg-[var(--ms-surf2)] border border-[var(--ms-bord)] rounded-2xl px-4 py-[15px] text-base text-[var(--ms-txt)] placeholder:text-[var(--ms-txt3)] outline-none focus:border-[var(--ms-acc)] transition-colors"
+          />
+          {errors.email && (
+            <p id="email-error" className="mt-1.5 text-sm text-[var(--ms-red)]">
+              {errors.email}
             </p>
           )}
+        </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
-          </Button>
-        </form>
+        <div>
+          <label htmlFor="password" className="block text-[13px] font-medium text-[var(--ms-txt2)] mb-2">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-describedby={errors.password ? "password-error" : undefined}
+            className="w-full bg-[var(--ms-surf2)] border border-[var(--ms-bord)] rounded-2xl px-4 py-[15px] text-base text-[var(--ms-txt)] placeholder:text-[var(--ms-txt3)] outline-none focus:border-[var(--ms-acc)] transition-colors"
+          />
+          {errors.password && (
+            <p id="password-error" className="mt-1.5 text-sm text-[var(--ms-red)]">
+              {errors.password}
+            </p>
+          )}
+        </div>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="underline underline-offset-4 hover:text-foreground">
-            Sign up
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+        {serverError && (
+          <p role="alert" className="text-sm text-[var(--ms-red)] bg-[var(--ms-red-bg)] rounded-xl px-4 py-3">
+            {serverError}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-[var(--ms-acc)] text-white rounded-2xl py-[17px] text-[17px] font-semibold tracking-[-0.3px] disabled:opacity-50 mt-2"
+        >
+          {loading ? "Signing in…" : "Sign In"}
+        </button>
+      </form>
+
+      <p className="mt-5 text-center text-[14px] text-[var(--ms-txt2)]">
+        Don&apos;t have an account?{" "}
+        <Link href="/signup" className="text-[var(--ms-acc)] font-semibold no-underline">
+          Sign up
+        </Link>
+      </p>
+    </div>
   );
 }
