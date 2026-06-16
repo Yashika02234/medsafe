@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -15,6 +16,36 @@ export default async function DashboardPage() {
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  const now = new Date();
+  const in30Days = new Date(now);
+  in30Days.setDate(in30Days.getDate() + 30);
+
+  const [total, expiringSoon] = await Promise.all([
+    prisma.medicines.count({
+      where: { family_member: { user_id: user.id }, is_active: true },
+    }),
+    prisma.medicines.count({
+      where: {
+        family_member: { user_id: user.id },
+        is_active: true,
+        expiry_date: { gte: now, lte: in30Days },
+      },
+    }),
+  ]);
+
+  const expiringMedicines = expiringSoon > 0
+    ? await prisma.medicines.findMany({
+        where: {
+          family_member: { user_id: user.id },
+          is_active: true,
+          expiry_date: { gte: now, lte: in30Days },
+        },
+        orderBy: { expiry_date: "asc" },
+        take: 3,
+        include: { ingredients: true },
+      })
+    : [];
 
   return (
     <div className="px-5 pt-6 flex flex-col gap-6">
@@ -35,74 +66,75 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Family member scroll row */}
-      <div>
-        <p className="text-[11px] font-semibold text-[var(--ms-txt3)] uppercase tracking-widest mb-3">
-          Viewing cabinet for
-        </p>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <FamilyChip name={firstName} active />
-          <FamilyChip name="Add member" isAdd />
-        </div>
-      </div>
-
       {/* Stats grid */}
       <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Medicines" value="—" variant="acc" />
-        <StatCard label="Expiring" value="—" variant="amb" />
+        <StatCard
+          label="Medicines"
+          value={total > 0 ? String(total) : "—"}
+          variant="acc"
+        />
+        <StatCard
+          label="Expiring"
+          value={expiringSoon > 0 ? String(expiringSoon) : "—"}
+          variant="amb"
+        />
         <StatCard label="Alerts" value="—" variant="red" />
-      </div>
-
-      {/* Severe interaction banner — hidden until Phase 3 */}
-      <div
-        aria-live="polite"
-        className="hidden bg-[var(--ms-red-bg)] border border-[var(--ms-red)] rounded-2xl px-4 py-4 flex items-start gap-3 animate-pulse-alert"
-      >
-        <div className="w-8 h-8 rounded-xl bg-[var(--ms-red)] flex items-center justify-center flex-shrink-0 mt-0.5">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path d="M12 2L1 21h22L12 2zm0 3.5L20.5 19h-17L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z" />
-          </svg>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-[var(--ms-red)] mb-0.5">Severe Interaction Detected</p>
-          <p className="text-xs text-[var(--ms-txt2)] leading-relaxed">
-            Interaction checks will be available in Phase 3.
-          </p>
-        </div>
       </div>
 
       {/* Expiring soon section */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-[15px] font-bold text-[var(--ms-txt)]">Expiring Soon</h2>
-          <span className="text-[12px] text-[var(--ms-acc)] font-semibold cursor-pointer">See all</span>
+          <a href="/medicines" className="text-[12px] text-[var(--ms-acc)] font-semibold no-underline">
+            See all
+          </a>
         </div>
 
-        {/* Empty state */}
-        <div className="bg-[var(--ms-surf)] rounded-2xl px-5 py-8 flex flex-col items-center gap-3 border border-[var(--ms-bord)]">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--ms-acc-bg)] flex items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--ms-acc)">
-              <path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V9h14v10zM5 7V5h14v2H5zm2 4h10v2H7v-2zm0 4h7v2H7v-2z" />
-            </svg>
-          </div>
-          <div className="text-center">
-            <p className="text-[14px] font-semibold text-[var(--ms-txt)] mb-1">No medicines yet</p>
-            <p className="text-[12px] text-[var(--ms-txt3)] leading-relaxed max-w-[220px]">
-              Add your first medicine using the + button below
+        {expiringMedicines.length === 0 ? (
+          <div className="bg-[var(--ms-surf)] rounded-2xl px-5 py-8 flex flex-col items-center gap-3 border border-[var(--ms-bord)]">
+            <div className="w-10 h-10 rounded-2xl bg-[var(--ms-grn-bg)] flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--ms-grn)">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+              </svg>
+            </div>
+            <p className="text-[13px] text-[var(--ms-txt3)] text-center">
+              {total === 0
+                ? "Add your first medicine using the + button in Cabinet."
+                : "Nothing expiring in the next 30 days."}
             </p>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {expiringMedicines.map((med) => (
+              <ExpiryRow
+                key={med.id}
+                name={med.brand_name}
+                salts={med.ingredients.map((i) => i.salt_name).join(", ")}
+                expiryDate={med.expiry_date}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Recent activity section */}
-      <div>
-        <h2 className="text-[15px] font-bold text-[var(--ms-txt)] mb-3">Recent Activity</h2>
-        <div className="bg-[var(--ms-surf)] rounded-2xl px-5 py-5 border border-[var(--ms-bord)]">
-          <p className="text-[13px] text-[var(--ms-txt3)] text-center">
-            Activity feed will appear here as you track medicines.
-          </p>
+      {/* Quick action */}
+      <a
+        href="/medicines"
+        className="bg-[var(--ms-surf)] border border-[var(--ms-bord)] rounded-2xl px-5 py-4 flex items-center gap-3 no-underline"
+      >
+        <div className="w-9 h-9 rounded-xl bg-[var(--ms-acc-bg)] flex items-center justify-center flex-shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--ms-acc)">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+          </svg>
         </div>
-      </div>
+        <div className="flex-1">
+          <p className="text-[14px] font-semibold text-[var(--ms-txt)]">Add a medicine</p>
+          <p className="text-[12px] text-[var(--ms-txt3)]">Track name, salt & expiry date</p>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--ms-txt3)">
+          <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+        </svg>
+      </a>
     </div>
   );
 }
@@ -113,7 +145,15 @@ const STAT_COLOR = {
   red: "text-[var(--ms-red)]",
 } as const;
 
-function StatCard({ label, value, variant }: { label: string; value: string; variant: keyof typeof STAT_COLOR }) {
+function StatCard({
+  label,
+  value,
+  variant,
+}: {
+  label: string;
+  value: string;
+  variant: keyof typeof STAT_COLOR;
+}) {
   return (
     <div className="bg-[var(--ms-surf)] rounded-2xl px-3 py-4 flex flex-col gap-1.5 border border-[var(--ms-bord)]">
       <p className={`text-[22px] font-extrabold leading-none ${STAT_COLOR[variant]}`}>
@@ -124,33 +164,44 @@ function StatCard({ label, value, variant }: { label: string; value: string; var
   );
 }
 
-function FamilyChip({ name, active, isAdd }: { name: string; active?: boolean; isAdd?: boolean }) {
+function ExpiryRow({
+  name,
+  salts,
+  expiryDate,
+}: {
+  name: string;
+  salts: string;
+  expiryDate: Date | string;
+}) {
+  const d = new Date(expiryDate);
+  const now = new Date();
+  const daysLeft = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const isUrgent = daysLeft <= 7;
+
+  const expLabel = daysLeft <= 0
+    ? "Expired"
+    : daysLeft === 1
+    ? "1 day left"
+    : `${daysLeft} days left`;
+
   return (
-    <button
-      type="button"
-      className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-[7px] rounded-full border text-[13px] font-medium transition-colors ${
-        isAdd
-          ? "border-dashed border-[var(--ms-bord)] text-[var(--ms-txt3)] bg-transparent"
-          : active
-          ? "bg-[var(--ms-acc)] border-[var(--ms-acc)] text-white"
-          : "bg-[var(--ms-surf)] border-[var(--ms-bord)] text-[var(--ms-txt2)]"
-      }`}
-    >
-      {isAdd ? (
-        <>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-          </svg>
-          {name}
-        </>
-      ) : (
-        <>
-          <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">
-            {name.charAt(0).toUpperCase()}
-          </span>
-          {name}
-        </>
-      )}
-    </button>
+    <div className="bg-[var(--ms-surf)] rounded-2xl px-4 py-3 border border-[var(--ms-bord)] flex items-center gap-3">
+      <div
+        className={`w-1.5 h-10 rounded-full flex-shrink-0 ${
+          isUrgent ? "bg-[var(--ms-red)]" : "bg-[var(--ms-amb)]"
+        }`}
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] font-semibold text-[var(--ms-txt)] truncate">{name}</p>
+        <p className="text-[11px] text-[var(--ms-txt3)] truncate">{salts}</p>
+      </div>
+      <span
+        className={`text-[11px] font-bold flex-shrink-0 ${
+          isUrgent ? "text-[var(--ms-red)]" : "text-[var(--ms-amb)]"
+        }`}
+      >
+        {expLabel}
+      </span>
+    </div>
   );
 }

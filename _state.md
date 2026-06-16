@@ -4,7 +4,7 @@
 
 Phase 2 — Medicine Cabinet (Core CRUD)
 
-Status: ⬜ NOT STARTED
+Status: 🔄 IN PROGRESS
 
 ---
 
