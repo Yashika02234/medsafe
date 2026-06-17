@@ -46,6 +46,10 @@ def test_full_pipeline_extracts_name_and_expiry(brand, expiry_line, expected_exp
     # OCR'd brand text should at least contain the brand's first word —
     # exact match isn't guaranteed even on clean synthetic text.
     assert brand.split()[0] in (parsed["medicine_name"] or "")
+    # Regression: medicine_name must come from the brand's own line only — not
+    # merged with the expiry line (Tesseract's line_num resets per block, so a
+    # naive group-by-line_num bug silently concatenated both lines together).
+    assert expiry_line not in (parsed["medicine_name"] or "")
 
 
 def test_parse_expiry_prefers_labeled_date_over_bare_date():

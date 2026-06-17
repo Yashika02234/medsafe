@@ -29,6 +29,10 @@ def extract_text(image: Image.Image) -> dict:
             {
                 "text": text,
                 "conf": conf,
+                # Tesseract's line_num resets per block, so it's only unique combined
+                # with block_num/par_num — never group lines by line_num alone.
+                "block_num": data["block_num"][i],
+                "par_num": data["par_num"][i],
                 "line_num": data["line_num"][i],
                 "height": data["height"][i],
             }

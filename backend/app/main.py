@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import ALLOWED_ORIGINS
+from app.routes import ocr
 from app.services import ocr_service  # noqa: F401 — import applies TESSERACT_CMD override
 
 app = FastAPI(title="MedSafe OCR Service")
@@ -13,6 +14,8 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+app.include_router(ocr.router)
 
 
 @app.get("/health")

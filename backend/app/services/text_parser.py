@@ -24,9 +24,12 @@ def parse_medicine_name(words: list[dict]) -> Optional[str]:
     if not words:
         return None
 
-    lines: dict[int, list[dict]] = {}
+    # line_num alone isn't unique — it resets per block — so group by the full
+    # (block_num, par_num, line_num) triple, matching Tesseract's actual hierarchy.
+    lines: dict[tuple[int, int, int], list[dict]] = {}
     for w in words:
-        lines.setdefault(w["line_num"], []).append(w)
+        key = (w["block_num"], w["par_num"], w["line_num"])
+        lines.setdefault(key, []).append(w)
 
     def avg_height(line_words: list[dict]) -> float:
         return sum(w["height"] for w in line_words) / len(line_words)

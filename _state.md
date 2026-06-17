@@ -4,7 +4,7 @@
 
 Phase 5 — OCR Scanner
 
-Status: 🔄 IN PROGRESS (P5-T1, P5-T2, P5-T3 all built and verified — Tesseract confirmed live on Render via Docker deploy at <https://medsafe-api-docker.onrender.com>. Real medicine strip photos still needed to validate real-world OCR accuracy. P5-T5 camera capture UI not started.)
+Status: 🔄 IN PROGRESS (P5-T1 through P5-T4 built and verified on Render at <https://medsafe-api-docker.onrender.com>. Real medicine strip photos still needed to validate real-world OCR accuracy. P5-T5 camera capture UI and P5-T6 frontend integration not started.)
 
 (Phase 4 — Notifications & Expiry Alerts remains 🔄 PAUSED: code complete, deployed, live email verified — scheduler setup deliberately deferred. Will revisit later.)
 
@@ -120,12 +120,21 @@ Either: (a) move to Phase 5 (OCR Scanner) and come back to the Phase 4 scheduler
 | 2 | Medicine Cabinet (Core CRUD) | ✅ Complete |
 | 3 | Drug Interaction Engine (KEY DIFFERENTIATOR) | ✅ Complete |
 | 4 | Notifications & Expiry Alerts | 🔄 Email send verified, deploy/cron-job.org remain |
-| 5 | OCR Scanner (FastAPI) | 🔄 P5-T1/T2/T3 done & Tesseract live on Render; P5-T4/T5/T6 remain |
+| 5 | OCR Scanner (FastAPI) | 🔄 P5-T1 through P5-T4 done; P5-T5/T6 remain |
 | 6 | Family Mode, Polish & Launch | ⬜ Not Started |
 
 ---
 
 ## Session Log
+
+### Session 26 — 2026-06-17 (P5-T4 — OCR API endpoint)
+
+- User deleted the old non-Docker `medsafe-api` Render service; `medsafe-api-docker` is the one real backend going forward.
+- Built P5-T4: `app/routes/ocr.py` (`POST /ocr/scan`) — validates content-type (JPEG/PNG only, 400), size (<5MB, 413), runs preprocess → extract → parse, returns `OCRScanResponse` (`app/models/schemas.py`); `app/services/rate_limiter.py` — simple in-memory sliding window, 10 requests/minute per client IP (429 once exceeded; acceptable to lose this state on restart at MVP scale, single free-tier instance).
+- `tests/test_ocr_route.py` — 5 cases (valid scan, invalid type, oversized, corrupt image, rate-limit threshold), all passing via FastAPI's `TestClient`.
+- **Found and fixed a real bug during manual curl verification** (not caught by the automated tests): `parse_medicine_name`'s line-grouping used `line_num` alone, but Tesseract's `line_num` resets per `block_num` — so two unrelated lines from different blocks can share `line_num=1` and get merged. A real two-line test image returned the brand name and expiry date concatenated together. Fixed by grouping on the composite `(block_num, par_num, line_num)` key in both `ocr_service.py` (now captures block_num/par_num) and `text_parser.py`. Also tightened the existing pytest assertion, which was too loose (substring check) to have caught this on its own. Logged in `defects.md`.
+- Also hit and worked around an MSYS2/git-bash quirk: absolute POSIX paths (`/tmp/notes.txt`) passed to `curl -F file=@path` get mangled by git-bash's automatic path translation and silently fail (`curl: (26)`) — relative paths work fine. Not a project bug, just an environment gotcha for future manual curl testing.
+- P5-T1 through P5-T4 all done and verified (locally + manual curl + automated tests). Remaining: P5-T5 (camera capture UI), P5-T6 (post-scan review + cabinet integration), and real medicine strip photos to validate actual OCR accuracy (everything tested so far is synthetic).
 
 ### Session 25 — 2026-06-17 (P5-T3 + Tesseract on Render — and a real process failure)
 

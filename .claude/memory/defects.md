@@ -20,6 +20,14 @@
 
 ## Logged Defects
 
+### 2026-06-17 (Phase 5 — Tesseract line_num grouping bug)
+
+**Problem:** `parse_medicine_name`'s "biggest-font line" heuristic grouped OCR words by `line_num` alone. On a real two-line strip image (brand name + expiry date), it returned both lines concatenated together (`"DOLO 650 EXP: 09/2027"`) instead of just the brand name. The existing parametrized test suite didn't catch this — its assertion was `brand.split()[0] in medicine_name`, a substring check that's still true even when the expiry line is wrongly appended.
+
+**Cause:** Tesseract's `image_to_data` hierarchy is `block_num > par_num > line_num > word_num` — `line_num` resets to 1 within each new block, so two words from *different* blocks can share the same `line_num` while being completely unrelated lines. Grouping by `line_num` alone silently merged them.
+
+**Rule:** When grouping Tesseract `image_to_data` output into lines, always key on the composite `(block_num, par_num, line_num)`, never `line_num` alone. Caught via a manual curl smoke test with a real two-line image — the pytest suite's assertions were too loose (substring match) to catch the actual bug despite the test "passing." When testing text-extraction/grouping logic, assert what should NOT be present (e.g. `expiry_line not in medicine_name`), not just that the expected substring is present — a loose positive assertion can pass even when the output is subtly wrong.
+
 ### 2026-06-17 (Phase 5 — created a file, never committed it, asked user to deploy from it)
 
 **Problem:** Created `backend/Dockerfile` (needed so Render could `apt-get install tesseract-ocr`, since the native Python runtime has no apt access) but never ran `git add`/`commit`/`push`. Told the user to deploy it on Render anyway. Every deploy attempt failed with "Dockerfile not found." Spent multiple rounds guessing at Render UI field semantics (Dockerfile Path, Docker Build Context Directory, Root Directory prefix interactions) and even told the user to create an entirely new Render service — all before checking the one thing that actually mattered: whether the file was in the repo Render was cloning. It wasn't. `git log --oneline -- backend/Dockerfile` showed zero commits.
