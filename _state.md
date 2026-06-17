@@ -2,9 +2,11 @@
 
 ## Current Phase
 
-Phase 4 — Notifications & Expiry Alerts
+Phase 5 — OCR Scanner
 
-Status: 🔄 IN PROGRESS (live email send verified; production deploy + cron-job.org setup remain)
+Status: 🔄 IN PROGRESS (FastAPI scaffold built and verified locally; Render deployment pending)
+
+(Phase 4 — Notifications & Expiry Alerts remains 🔄 PAUSED: code complete, deployed, live email verified — scheduler setup deliberately deferred. Will revisit later.)
 
 ---
 
@@ -48,13 +50,15 @@ Status: 🔄 IN PROGRESS (live email send verified; production deploy + cron-job
 
 ## Current Task
 
-Phase 4 backend is built, logic-verified, and a real email send is confirmed working end-to-end (see Session 21). Remaining: P4-T4 wrap-up — production deploy + cron-job.org setup.
+Phase 4 backend is built, deployed to production (<https://medsafe-nine.vercel.app>), and a real email send is confirmed working end-to-end (see Session 21). The cron route is live and correctly rejects unauthenticated requests in production (verified via curl, 401).
+
+**Deliberately paused here**: scheduler setup (cron-job.org or Vercel Cron) decided against for now — user chose to defer rather than set it up immediately. Without a scheduler, `/api/cron/check-expiry` works but nothing calls it automatically, so no real notification emails go out yet. Phase 4 is not being marked complete until this is revisited.
 
 ---
 
 ## Next Task
 
-P4-T4 wrap-up: deploy to Vercel (`RESEND_API_KEY`/`RESEND_FROM_EMAIL` need adding to Vercel env vars — `CRON_SECRET` is already there from Phase 1), set up a cron-job.org account (free) pointed at `https://<vercel-domain>/api/cron/check-expiry`, method POST, header `X-Cron-Secret: <value>`, daily schedule. Then mark Phase 4 complete in this file.
+Either: (a) move to Phase 5 (OCR Scanner) and come back to the Phase 4 scheduler later, or (b) set up the scheduler now — options on the table: cron-job.org (free, matches the locked `tech-stack.md` decision) or Vercel's native Cron Jobs (no third-party signup, free on Hobby plan, capped at once/day — would need explicit approval to change the locked tech-stack decision).
 
 ---
 
@@ -116,12 +120,24 @@ P4-T4 wrap-up: deploy to Vercel (`RESEND_API_KEY`/`RESEND_FROM_EMAIL` need addin
 | 2 | Medicine Cabinet (Core CRUD) | ✅ Complete |
 | 3 | Drug Interaction Engine (KEY DIFFERENTIATOR) | ✅ Complete |
 | 4 | Notifications & Expiry Alerts | 🔄 Email send verified, deploy/cron-job.org remain |
-| 5 | OCR Scanner (FastAPI) | ⬜ Not Started |
+| 5 | OCR Scanner (FastAPI) | 🔄 Scaffold built, Render deploy pending |
 | 6 | Family Mode, Polish & Launch | ⬜ Not Started |
 
 ---
 
 ## Session Log
+
+### Session 22 — 2026-06-17 (Phase 5 kickoff — FastAPI scaffold)
+
+- User chose to defer the Phase 4 scheduler (cron-job.org/Vercel Cron) for now and move to Phase 5. Phase 4 stays marked PAUSED, not complete — the code works but nothing triggers it automatically yet.
+- **Found a stale-backlog conflict before writing any code**: `project-backlog.md`'s Phase 5 tasks (P5-T1, P5-T3) call for an EasyOCR fallback when Tesseract confidence is low, and list `easyocr` in `requirements.txt`. But `tech-stack.md` has a **locked decision removing EasyOCR entirely** (needs 1.5-2GB RAM, Render free tier is 512MB, hard OOM crash) — low-confidence results are meant to be handled by a user-correction UI, not a second OCR engine. Followed the locked decision: Tesseract only, no EasyOCR anywhere in `requirements.txt` or the pipeline design.
+- P5-T1 (Initialize FastAPI Project) built and verified locally — Render deploy itself is pending (needs the user's free Render account, requested):
+  - `backend/requirements.txt` — fastapi, uvicorn, python-multipart, pillow, opencv-python-headless, pytesseract (no easyocr)
+  - `backend/app/config.py` — `ALLOWED_ORIGINS` from env, defaults to `localhost:3000`
+  - `backend/app/main.py` — FastAPI app, CORS middleware, `GET /health`
+  - `backend/.env.example`
+  - Created a local `.venv`, installed dependencies, ran `uvicorn app.main:app --port 8000` — confirmed `GET /health` returns `{"status":"ok"}` and a CORS preflight from `http://localhost:3000` returns the correct `access-control-allow-origin` header.
+- Remaining for P5-T1: user creates a free Render account, connects the GitHub repo, configures build/start commands + the Tesseract apt-get build step, deploys, and confirms `/health` responds on the live Render URL. Then add `FASTAPI_BACKEND_URL` to Vercel env vars.
 
 ### Session 21 — 2026-06-17 (Phase 4 — live Resend email verified)
 
