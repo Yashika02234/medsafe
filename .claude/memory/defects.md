@@ -20,6 +20,14 @@
 
 ## Logged Defects
 
+### 2026-06-17 (Phase 5 — created a file, never committed it, asked user to deploy from it)
+
+**Problem:** Created `backend/Dockerfile` (needed so Render could `apt-get install tesseract-ocr`, since the native Python runtime has no apt access) but never ran `git add`/`commit`/`push`. Told the user to deploy it on Render anyway. Every deploy attempt failed with "Dockerfile not found." Spent multiple rounds guessing at Render UI field semantics (Dockerfile Path, Docker Build Context Directory, Root Directory prefix interactions) and even told the user to create an entirely new Render service — all before checking the one thing that actually mattered: whether the file was in the repo Render was cloning. It wasn't. `git log --oneline -- backend/Dockerfile` showed zero commits.
+
+**Cause:** Assumed that creating a file locally meant it was "done" and ready to deploy. Skipped the basic check (`git status`/`git log`) before sending the user into an external dashboard to debug what was actually a local oversight.
+
+**Rule:** Before telling the user to deploy, redeploy, or otherwise act on a file in an external system (Render, Vercel, etc.), verify it's actually committed and pushed (`git log --oneline -- <path>` or `git status`) — don't assume a `Write` tool call means the file is live anywhere outside the local working tree. If a deploy fails identically across multiple different configuration attempts, check whether the file exists in the remote repo *before* re-guessing UI settings.
+
 ### 2026-06-17 (Phase 5 — OCR deskew angle normalization)
 
 **Problem:** `image_preprocessor._deskew` worked on a multi-line, rotated test image but completely erased the text (resulting in a blank white output) on a wide, single-line, *already-upright* image — exactly the common case for a real medicine strip photographed roughly straight.

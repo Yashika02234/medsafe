@@ -4,7 +4,7 @@
 
 Phase 5 — OCR Scanner
 
-Status: 🔄 IN PROGRESS (P5-T1 done; P5-T2 image preprocessor built + pytest-verified on synthetic images — real medicine strip photos needed next; Tesseract binary still not installed on Render)
+Status: 🔄 IN PROGRESS (P5-T1, P5-T2, P5-T3 all built and verified — Tesseract confirmed live on Render via Docker deploy at <https://medsafe-api-docker.onrender.com>. Real medicine strip photos still needed to validate real-world OCR accuracy. P5-T5 camera capture UI not started.)
 
 (Phase 4 — Notifications & Expiry Alerts remains 🔄 PAUSED: code complete, deployed, live email verified — scheduler setup deliberately deferred. Will revisit later.)
 
@@ -120,12 +120,21 @@ Either: (a) move to Phase 5 (OCR Scanner) and come back to the Phase 4 scheduler
 | 2 | Medicine Cabinet (Core CRUD) | ✅ Complete |
 | 3 | Drug Interaction Engine (KEY DIFFERENTIATOR) | ✅ Complete |
 | 4 | Notifications & Expiry Alerts | 🔄 Email send verified, deploy/cron-job.org remain |
-| 5 | OCR Scanner (FastAPI) | 🔄 P5-T1 done, P5-T2 built (needs real photos) |
+| 5 | OCR Scanner (FastAPI) | 🔄 P5-T1/T2/T3 done & Tesseract live on Render; P5-T4/T5/T6 remain |
 | 6 | Family Mode, Polish & Launch | ⬜ Not Started |
 
 ---
 
 ## Session Log
+
+### Session 25 — 2026-06-17 (P5-T3 + Tesseract on Render — and a real process failure)
+
+- Installed Tesseract locally via Chocolatey (elevated PowerShell, user-run) at `C:\Program Files\Tesseract-OCR\tesseract.exe`, for local OCR testing alongside Render.
+- Built P5-T3: `app/services/ocr_service.py` (Tesseract extraction via `pytesseract.image_to_data`, mean confidence + per-word data; `TESSERACT_CMD` env override for local dev) and `app/services/text_parser.py` (expiry regex preferring labeled "EXP"/"EXPIRY" dates over a bare MM/YYYY fallback; medicine-name heuristic = tallest-average-word-height OCR line, since strips print the brand name largest). `tests/test_ocr_pipeline.py` — 6 cases, all passing against the real local Tesseract install on synthetic strip images.
+- **Process failure, logged in `defects.md`**: created `backend/Dockerfile` (needed since Render's native Python runtime can't `apt-get install tesseract-ocr`) but never committed/pushed it, then spent several rounds with the user guessing at Render UI field semantics (Dockerfile Path / Docker Build Context / Root Directory interactions) and even creating a second fresh Render service — all while the actual cause was that the file simply didn't exist in the repo Render was cloning. Caught by finally running `git log --oneline -- backend/Dockerfile` and seeing zero commits. Lesson logged: verify a file is actually pushed before sending the user to debug it in an external dashboard.
+- Once actually pushed, the Docker deploy on the new `medsafe-api-docker` Render service succeeded. Verified Tesseract is genuinely present by extending `GET /health` to report `tesseract_version` (avoids needing Render's Shell feature, which is a paid add-on) — confirmed locally (`5.5.0.20241111`) and live on Render (`5.5.0`).
+- User is deleting the old non-Docker `medsafe-api` service to avoid confusion; `https://medsafe-api-docker.onrender.com` is the one real backend URL going forward — needs to replace the old URL in Vercel's `FASTAPI_BACKEND_URL` if that was already set.
+- P5-T1, P5-T2, P5-T3 all done. Remaining: P5-T4 (OCR API endpoint), P5-T5 (camera capture UI), P5-T6 (post-scan review + integration), and real medicine strip photos to validate actual OCR accuracy (everything tested so far is synthetic text images).
 
 ### Session 24 — 2026-06-17 (P5-T2 — image preprocessing pipeline)
 
