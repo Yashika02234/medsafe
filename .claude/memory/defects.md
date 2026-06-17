@@ -20,6 +20,14 @@
 
 ## Logged Defects
 
+### 2026-06-17 (Phase 5 — OCR deskew angle normalization)
+
+**Problem:** `image_preprocessor._deskew` worked on a multi-line, rotated test image but completely erased the text (resulting in a blank white output) on a wide, single-line, *already-upright* image — exactly the common case for a real medicine strip photographed roughly straight.
+
+**Cause:** `cv2.minAreaRect`'s angle (OpenCV 4.5+ convention) comes back near 90° — not near 0° — for a wide rectangle with little/no skew, because the convention reports the angle of whichever box edge it picks as the reference, not "deviation from upright." The deskew correction formula (`-(90+angle) if angle < -45 else -angle`) was copied from older deskew tutorials written for OpenCV's pre-4.5 angle convention and never triggers its `< -45` branch in this version, so a true-zero-skew case got "corrected" with a spurious ~90° rotation, rotating the single line of text out of the frame entirely.
+
+**Rule:** When using `cv2.minAreaRect` for deskew, normalize the angle into (-45°, 45°] first (`if angle > 45: angle -= 90`) before negating — don't trust angle-correction formulas from tutorials without checking which OpenCV angle convention they assume. Caught by testing a wide single-line upright image, not just a rotated one — **always test the "no correction needed" case explicitly**, since deskew bugs often only show up when the input *shouldn't* be rotated. Added as a permanent regression case in `backend/tests/test_image_preprocessor.py`.
+
 ### 2026-06-17 (Phase 3 — drug-class detection severity keywords)
 
 **Problem:** Live-tested the new opioid-class detection (Diazepam + Codeine — a textbook severe interaction, "CNS dep SEVERE" per the Phase 0 validation report) and it classified as MILD. The matched FDA text said "increases the risk of respiratory depression" — a severity term not in the keyword list.

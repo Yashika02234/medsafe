@@ -4,7 +4,7 @@
 
 Phase 5 — OCR Scanner
 
-Status: 🔄 IN PROGRESS (FastAPI scaffold built and verified locally; Render deployment pending)
+Status: 🔄 IN PROGRESS (P5-T1 done; P5-T2 image preprocessor built + pytest-verified on synthetic images — real medicine strip photos needed next; Tesseract binary still not installed on Render)
 
 (Phase 4 — Notifications & Expiry Alerts remains 🔄 PAUSED: code complete, deployed, live email verified — scheduler setup deliberately deferred. Will revisit later.)
 
@@ -120,12 +120,27 @@ Either: (a) move to Phase 5 (OCR Scanner) and come back to the Phase 4 scheduler
 | 2 | Medicine Cabinet (Core CRUD) | ✅ Complete |
 | 3 | Drug Interaction Engine (KEY DIFFERENTIATOR) | ✅ Complete |
 | 4 | Notifications & Expiry Alerts | 🔄 Email send verified, deploy/cron-job.org remain |
-| 5 | OCR Scanner (FastAPI) | 🔄 Scaffold built, Render deploy pending |
+| 5 | OCR Scanner (FastAPI) | 🔄 P5-T1 done, P5-T2 built (needs real photos) |
 | 6 | Family Mode, Polish & Launch | ⬜ Not Started |
 
 ---
 
 ## Session Log
+
+### Session 24 — 2026-06-17 (P5-T2 — image preprocessing pipeline)
+
+- Built `backend/app/services/image_preprocessor.py`: load (Pillow) → resize if >2000px wide → grayscale → deskew (OpenCV `minAreaRect`) → adaptive threshold. Returns a PIL `Image` (mode "L"), not a file — caller's choice what to do with it.
+- No real medicine strip photos available yet, so verified against synthetic test images (rendered text, deliberately rotated) instead — real photos are still needed before P5-T2 can be considered fully done per its own acceptance criteria ("text visually clearer" needs real strips, not synthetic ones).
+- **Found and fixed a real deskew bug via this testing**: a wide, single-line, *already-upright* synthetic image (the realistic case — most phone photos of a strip are roughly straight) came out completely blank after preprocessing. Root cause: `cv2.minAreaRect`'s angle convention (OpenCV 4.5+) reports near-90° for already-horizontal text, not near-0°; the deskew correction formula was copied from a pre-4.5-convention tutorial and never normalized that case, so it applied a spurious ~90° rotation that pushed the text out of frame entirely. Fixed by normalizing the raw angle into (-45°,45°] before negating. Logged in `defects.md` — the general lesson: deskew bugs often only surface on the "no correction needed" case, so that case must be tested explicitly, not just a rotated one.
+- Converted the ad-hoc verification into a proper test suite per `coding-rules.md` (pytest for all backend services): `backend/tests/test_image_preprocessor.py` — 6 cases covering rotated/upright/wide/PNG/JPEG inputs (including the bug above as a permanent regression case), a max-width cap check, and an invalid-input error case. All 6 pass.
+- Remaining for P5-T2: get ~10 real medicine strip photos from the user to do the actual required visual-quality check and confirm real-world performance (lighting, glare, real fonts, foil backgrounds — none of which a synthetic rendered-text image can represent).
+
+### Session 23 — 2026-06-17 (P5-T1 — Render deployment verified)
+
+- User created a free Render account and deployed `backend/` as a Python web service at `https://medsafe-api.onrender.com`.
+- Verified live: `GET /health` → `200 {"status":"ok"}`; CORS preflight from `https://medsafe-nine.vercel.app` → correct `access-control-allow-origin` header.
+- **P5-T1 is functionally done** except one acceptance criterion: Tesseract itself (the OCR binary `pytesseract` wraps, not yet installed) isn't on the Render service. Render's standard Python runtime doesn't expose apt-get for system packages — getting Tesseract on there will need a Dockerfile-based deploy instead of the native Python runtime used for this first deploy. Doesn't block anything yet (`/health` doesn't need it) but is a known next step before P5-T2/T3 (image preprocessing + OCR extraction) can run on Render.
+- Still need to add `FASTAPI_BACKEND_URL=https://medsafe-api.onrender.com` to Vercel env vars (not yet consumed by any frontend code — nothing calls it until P5-T6's proxy route).
 
 ### Session 22 — 2026-06-17 (Phase 5 kickoff — FastAPI scaffold)
 
