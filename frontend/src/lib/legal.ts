@@ -7,7 +7,7 @@
  */
 
 // Must match users.consent_text_version in the DB schema.
-export const CONSENT_TEXT_VERSION = "v1.0-2026-06";
+export const CONSENT_TEXT_VERSION = "v1.1-2026-06";
 
 export const CONSENT_SCREEN = {
   version: CONSENT_TEXT_VERSION,
@@ -20,7 +20,7 @@ export const CONSENT_SCREEN = {
     "Family member names (optional) — only if you choose to manage medicines for other people.",
   ],
   howWeUseIt: [
-    "Medicine names are sent to the US National Institutes of Health (NIH) free database to look up known drug interactions. No other personal information is sent.",
+    "Medicine names are sent to the US National Institutes of Health (NIH) RxNorm database to standardize drug names, and to the US FDA's OpenFDA database to look up known drug interactions. No other personal information is sent.",
     "Email reminders are sent to your address only. Your email is not shared with advertisers or third parties.",
     "All your data is stored on Supabase servers located in Mumbai, India.",
   ],
@@ -53,7 +53,7 @@ export const MEDICAL_DISCLAIMER = {
    * "no interactions found" and "interaction data unavailable" results.
    */
   inline:
-    "Drug interaction information is sourced from the NIH database and is for general awareness only. Consult your doctor or pharmacist before making any decision about your medicines.",
+    "Drug interaction information is sourced from the US FDA's public drug label database (OpenFDA) and is for general awareness only. Consult your doctor or pharmacist before making any decision about your medicines.",
 
   /**
    * Full text. Used in an expandable "About this information" section and
@@ -64,7 +64,7 @@ export const MEDICAL_DISCLAIMER = {
     intro:
       "MedSafe is an informational tool, not a medical device, diagnostic service, or substitute for professional medical advice.",
     source:
-      "Drug interaction information shown in this app is sourced from the US National Institutes of Health (NIH) RxNav database and is provided for general awareness only.",
+      "Drug interaction information shown in this app is sourced from the US Food and Drug Administration's OpenFDA drug label database and is provided for general awareness only. Medicine names are also checked against the US National Institutes of Health (NIH) RxNorm database to standardize drug identification.",
     limits: [
       "An interaction warning does not mean you should stop taking a medicine. Many interactions listed are rare or minor, or are already managed by your doctor based on your situation.",
       "MedSafe cannot know your complete health history, current dosages, or individual factors that affect how medicines interact.",

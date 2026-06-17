@@ -113,8 +113,8 @@ model interactions_cache {
   // 1=severe, 2=moderate, 3=mild, 99=unknown
   // Enables ORDER BY severity_ordinal ASC at database level
   description      String
-  source           String   @default("rxnav")
-  // CHECK: source IN ('rxnav', 'gemini')
+  source           String   @default("openfda")
+  // CHECK: source IN ('openfda', 'gemini', 'class_rule')
   cached_at        DateTime @default(now()) @db.Timestamptz
 
   // NO UNIQUE constraint on (rxcui_a, rxcui_b) — a pair can have multiple interactions

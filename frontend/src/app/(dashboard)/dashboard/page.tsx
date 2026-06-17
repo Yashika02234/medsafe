@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { checkAllInteractions } from "@/lib/services/interactionEngine";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -21,7 +22,11 @@ export default async function DashboardPage() {
   const in30Days = new Date(now);
   in30Days.setDate(in30Days.getDate() + 30);
 
-  const [total, expiringSoon] = await Promise.all([
+  const selfMember = await prisma.family_members.findFirst({
+    where: { user_id: user.id, is_self: true },
+  });
+
+  const [total, expiringSoon, interactionResult] = await Promise.all([
     prisma.medicines.count({
       where: { family_member: { user_id: user.id }, is_active: true },
     }),
@@ -32,7 +37,12 @@ export default async function DashboardPage() {
         expiry_date: { gte: now, lte: in30Days },
       },
     }),
+    selfMember
+      ? checkAllInteractions(selfMember.id)
+      : Promise.resolve({ warnings: [], uncheckedCount: 0 }),
   ]);
+
+  const interactionCount = interactionResult.warnings.length;
 
   const expiringMedicines = expiringSoon > 0
     ? await prisma.medicines.findMany({
@@ -78,7 +88,11 @@ export default async function DashboardPage() {
           value={expiringSoon > 0 ? String(expiringSoon) : "—"}
           variant="amb"
         />
-        <StatCard label="Alerts" value="—" variant="red" />
+        <StatCard
+          label="Alerts"
+          value={interactionCount > 0 ? String(interactionCount) : "—"}
+          variant="red"
+        />
       </div>
 
       {/* Expiring soon section */}

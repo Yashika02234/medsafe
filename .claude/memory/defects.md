@@ -20,6 +20,44 @@
 
 ## Logged Defects
 
+### 2026-06-17 (Phase 3 — drug-class detection severity keywords)
+
+**Problem:** Live-tested the new opioid-class detection (Diazepam + Codeine — a textbook severe interaction, "CNS dep SEVERE" per the Phase 0 validation report) and it classified as MILD. The matched FDA text said "increases the risk of respiratory depression" — a severity term not in the keyword list.
+
+**Cause:** Same root cause as the earlier Warfarin+Aspirin bug: the severity keyword list was built from the spec document's examples, not validated against every real label phrase encountered. "Respiratory depression" and "coma" are common opioid/benzodiazepine boxed-warning terms that simply weren't in the original list.
+
+**Rule:** Reinforces the existing rule in this file — every new detection path (class-term matching, rule-based pairs, anything that surfaces new label text) must be live-tested against a real, known-severity pair before trusting the classifier, not just checked for "did it detect" — detection and correct severity are separate things to verify. Added "respiratory depression" and "coma" to `SEVERE_KEYWORDS` in `src/lib/services/interactionEngine.ts`.
+
+### 2026-06-17 (Phase 2/3 wrap-up — dashboard never wired to real data)
+
+**Problem:** `src/app/(dashboard)/dashboard/page.tsx` (the actual visible Dashboard screen) had its own separate, duplicated Prisma queries for `total`/`expiringSoon` instead of using `/api/dashboard/summary`, and its "Alerts" stat card was hardcoded to the literal string `"—"` — it never called the interaction engine at all. This meant that even after the entire Phase 3 interaction engine was built, tested, and wired into `/api/interactions` and `/api/dashboard/summary`, the dashboard a user actually sees never reflected it. The dead `/api/dashboard/summary` route (built in Phase 2, confirmed zero call sites) masked this — its existence created a false impression that "dashboard integration" was done.
+
+**Cause:** When wiring a new computed value (interaction count) into "the dashboard," only the obvious API route was updated. The actual page component fetches its own data independently (a Next.js Server Component pattern — direct Prisma calls, no client-side fetch to its own API route) and was never checked.
+
+**Rule:** When adding a new data source meant to surface on a page, grep for *every* place that page's data could come from before declaring it wired up — don't assume the API route with the matching name is actually consumed by the page. For Server Component pages in this codebase, check the page file itself for inline Prisma queries, since the established pattern here is direct server-side fetching, not client calls to internal API routes.
+
+**Resolution:** Updated `dashboard/page.tsx` to call `checkAllInteractions` directly (same as `/api/interactions` does) and deleted the now-confirmed-dead `/api/dashboard/summary` route rather than maintaining two parallel implementations of the same query.
+
+### 2026-06-17 (Phase 3 — interaction severity classification)
+
+**Problem:** The first OpenFDA severity classifier used exact multi-word phrases as keywords (e.g. `"significant bleeding"`, `"monitor closely"`). Live testing against a real, known-severe pair (Warfarin + Aspirin, validated SEVERE in the Phase 0 report) classified it as MODERATE — the actual FDA label text said "closely monitor" (reversed word order) and "risk of Bleeding" (not the bigram "significant bleeding").
+
+**Cause:** The Phase 0 validation report's severity keyword table was a human-written approximation of the kind of language FDA labels use, not verbatim strings guaranteed to appear. Matching on exact bigrams is brittle against real-world text variance.
+
+**Rule:** When classifying severity from FDA label text, match on single significant terms (`"bleeding"`, `"hemorrhage"`, `"monitor"`, `"contraindicat"` as a stem) rather than fixed multi-word phrases — real label text varies in word order and surrounding phrasing. Always verify any new keyword set against at least one real, known-severity pair before trusting it, not just against the spec document. See `src/lib/services/interactionEngine.ts`.
+
+**Also note:** `checked_pairs`/`interactions_cache` pair ordering is `rxcui_a < rxcui_b` lexicographically as **strings**, which does not match numeric ordering (e.g. `"11289" < "1191"` as strings, even though 1191 < 11289 numerically). Any manual DB query/cleanup against these tables must compare as strings, not assume numeric intuition — got this backwards once during verification and silently deleted zero rows.
+
+### 2026-06-17 (Phase 2 — IDOR + RLS audit)
+
+**Problem:** `POST /api/medicines` accepted an optional `family_member_id` from the request body and used it directly without verifying it belonged to the authenticated user — an IDOR. A malicious caller could attach a medicine to another user's family member.
+
+**Cause:** Ownership verification was implemented for `GET`/`PUT`/`DELETE` (all filter/check via `family_member.user_id`), but the `POST` code path's optional explicit-`family_member_id` branch was added without the same check. Not exploitable via the current UI (which never sends this field — Family Mode ships in Phase 6), but live in the API regardless.
+
+**Rule:** Every endpoint that accepts a foreign-key ID from the client (not derived server-side from the session) must verify ownership before use — never assume "the UI doesn't send this" is sufficient protection. When adding Family Mode in Phase 6, audit every new family-member-scoped endpoint for this same pattern.
+
+**Also confirmed during this audit:** Prisma connects via `DATABASE_URL`/`DIRECT_URL` (a direct Postgres connection), so **Postgres RLS policies do not apply to any Next.js API route** — all isolation in this app is enforced by the `user_id`/`family_member` filters in application code, not by `rls-policies.sql`. RLS would only matter if a client-side Supabase call were ever made directly (none currently exist). Don't rely on "RLS is enabled" as evidence of isolation when auditing routes that go through Prisma — check the `where` clause instead.
+
 ### 2026-06-10
 
 **Problem:** RxNav Drug Interaction API (`rxnav.nlm.nih.gov/REST/interaction/`) returns 404 for all endpoints.

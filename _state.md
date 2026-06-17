@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Phase 2 — Medicine Cabinet (Core CRUD)
+Phase 4 — Notifications & Expiry Alerts
 
-Status: 🔄 IN PROGRESS
+Status: 🔄 IN PROGRESS (live email send verified; production deploy + cron-job.org setup remain)
 
 ---
 
@@ -48,13 +48,13 @@ Status: 🔄 IN PROGRESS
 
 ## Current Task
 
-Phase 2 — Medicine Cabinet (Core CRUD)
+Phase 4 backend is built, logic-verified, and a real email send is confirmed working end-to-end (see Session 21). Remaining: P4-T4 wrap-up — production deploy + cron-job.org setup.
 
 ---
 
 ## Next Task
 
-P2-T1: CDSCO Fuse.js search + Add Medicine form
+P4-T4 wrap-up: deploy to Vercel (`RESEND_API_KEY`/`RESEND_FROM_EMAIL` need adding to Vercel env vars — `CRON_SECRET` is already there from Phase 1), set up a cron-job.org account (free) pointed at `https://<vercel-domain>/api/cron/check-expiry`, method POST, header `X-Cron-Secret: <value>`, daily schedule. Then mark Phase 4 complete in this file.
 
 ---
 
@@ -113,15 +113,83 @@ P2-T1: CDSCO Fuse.js search + Add Medicine form
 |-------|------|--------|
 | 0 | Planning & Data Validation | ✅ Complete |
 | 1 | Foundation (Auth + DB + Deploy) | ✅ Complete |
-| 2 | Medicine Cabinet (Core CRUD) | ⬜ Not Started |
-| 3 | Drug Interaction Engine (KEY DIFFERENTIATOR) | ⬜ Not Started |
-| 4 | Notifications & Expiry Alerts | ⬜ Not Started |
+| 2 | Medicine Cabinet (Core CRUD) | ✅ Complete |
+| 3 | Drug Interaction Engine (KEY DIFFERENTIATOR) | ✅ Complete |
+| 4 | Notifications & Expiry Alerts | 🔄 Email send verified, deploy/cron-job.org remain |
 | 5 | OCR Scanner (FastAPI) | ⬜ Not Started |
 | 6 | Family Mode, Polish & Launch | ⬜ Not Started |
 
 ---
 
 ## Session Log
+
+### Session 21 — 2026-06-17 (Phase 4 — live Resend email verified)
+
+- User created a free Resend account and provided an API key. Added `RESEND_API_KEY`/`RESEND_FROM_EMAIL` to `frontend/.env.local`; restarted the dev server (Next.js doesn't hot-reload `.env.local`).
+- **Discovered a Resend sandbox constraint during testing**: unverified accounts (no custom domain) can only send to the email address the Resend account itself was signed up with, not arbitrary recipients — Resend returns a 403 explaining this, which is exactly what the first test attempt hit (tried sending to a different address than the Resend account's own email). Not a bug in our code — `sendExpiryAlert` correctly surfaced the 403 as a `'failed'` log entry with the real error message, exactly as designed.
+- Re-ran the test against the correct address (the email the Resend account was actually signed up with) — **`processExpiryAlerts()` returned `sent: 1`, confirming a real email was delivered** end-to-end: medicine expiring today → tiered as `expiry_1` → sent via Resend → logged `status: 'sent'` in `notification_log`.
+- Test account and all data deleted afterward.
+- Remaining for Phase 4: deploy to Vercel (add `RESEND_API_KEY`/`RESEND_FROM_EMAIL` to Vercel env vars), set up cron-job.org (free) to hit `/api/cron/check-expiry` daily, then mark Phase 4 complete.
+
+### Session 20 — 2026-06-17 (Phase 4 kickoff — Notifications & Expiry Alerts)
+
+- Scoped against the actual schema: `notification_log` table + `users.notification_preference` already existed from the Phase 1 migration, no new tables needed.
+- Found the Settings page showed 4 separate notification toggles (30-day/7-day/1-day/interactions) with no real state behind them, but the schema only has one binary flag and the backlog spec calls for a single toggle — user confirmed collapsing to 1 real toggle rather than migrating the schema to support 4.
+- Built:
+  - `src/lib/clients/resend.ts` — `sendExpiryAlert()`, HTML email with branding + footer disclaimer
+  - `src/lib/services/expiryChecker.ts` — range-based tiers (≤1/≤7/≤30 days), dedup via `notification_log` (a `'sent'` row permanently retires that medicine+tier; `'failed'` rows don't block retry, matching the schema's documented intent; preference='none' logs `'skipped_preference'` without attempting a send)
+  - `POST /api/cron/check-expiry` — `X-Cron-Secret` header check against the `CRON_SECRET` already generated in Phase 1
+  - `PUT /api/users/preferences` + `NotificationToggle.tsx` — real single toggle wired to `users.notification_preference`, replacing the static 4-toggle stub
+- **Live-verified the full logic with two temp test accounts** (created and deleted afterward): medicine expiring in 25 days correctly tiered as `expiry_30`; medicine expiring in 5 days under a `preference='none'` user correctly logged `skipped_preference` with no send attempt; cron's secret check correctly rejected missing/wrong secrets (401) and accepted the right one; manually marking a row `'sent'` and re-running cron correctly excluded that medicine+tier while the preference-skip repeated (as designed); preferences API correctly validated/rejected bad input and unauthenticated calls.
+- **Blocked**: actually sending a real email needs a live `RESEND_API_KEY` (free tier, no card) — `sendExpiryAlert` already handles the missing-key case gracefully (`status: "failed"`, `error_message: "RESEND_API_KEY not configured"`, confirmed in the test above). User is getting a key; once added to `.env.local` we can verify a real send and move to P4-T4 wrap-up (production deploy + cron-job.org setup).
+- `tsc --noEmit` and `eslint` both clean throughout.
+
+### Session 19 — 2026-06-17 (Phase 3 wrap-up: drug-class detection + stale UI text)
+
+- Fixed stale "Phase 2"/"Phase 1" copy found by the user in the `/family` page (Family Mode banner + "Add Member" stub both said "Phase 2" — actual roadmap has Family Mode in Phase 6) and `/settings` (footer said "Phase 1 Build"). Leftover from early placeholder text never updated as phases got re-scoped.
+- Built the drug-class detection enhancement (the last open Phase 3 item) to fix the 3 known misses from `.claude/outputs/phase-00/interaction-validation-report.md`:
+  - `src/lib/data/drugClasses.ts` — static table (SSRI, opioid, ARB, ACE inhibitor, K-sparing diuretic; ~25 well-established drugs). Not RxClass API — avoids another external dependency for something this small and fixed.
+  - `interactionEngine.ts`: class-term fallback matching (if a label doesn't name the other drug, fall back to its class terms like "SSRI"/"opioid") fixes misses #1/#2; a small rule-based class-pair table (ARB/ACE inhibitor + K-sparing diuretic → hyperkalemia) fixes miss #3, which is undetectable by text-mining since neither label names the other drug — checked before any OpenFDA call, so it's also faster.
+  - DB migration: `interactions_cache.source` constraint extended to `('openfda', 'gemini', 'class_rule')` so rule-based (non-FDA-text) results aren't mislabeled as `'openfda'`.
+- **Live-verified all 3 fixes** with a temp test account (created and fully deleted afterward): Sertraline+Tramadol → correctly detected SEVERE (serotonin syndrome, via SSRI class term); Losartan+Spironolactone → correctly detected MODERATE (hyperkalemia, rule-based, sub-second since it skips OpenFDA entirely).
+- **Found and fixed another severity-classification bug during that test**: Diazepam+Codeine (expected "CNS dep SEVERE" per the validation report) initially classified as MILD — matched FDA text said "respiratory depression," which wasn't in the keyword list. Added `"respiratory depression"` and `"coma"` to `SEVERE_KEYWORDS`; re-verified as SEVERE. Logged in `defects.md` — same root cause pattern as the earlier Warfarin+Aspirin bug (keyword list built from spec examples, not validated against real text).
+- **Phase 3 — Drug Interaction Engine marked COMPLETE.** Phase 4 (Notifications & Expiry Alerts) is next.
+
+### Session 18 — 2026-06-17 (Phase 3 UI polish + Phase 2/3 completeness audit)
+
+- Built `InteractionBanner.tsx` (dismissible, shown on `/medicines` when severe interactions exist, links to `/interactions`) and a ⚠️ badge + "view details" link on `MedicineCard` for medicines involved in an interaction. Wired `medicines/page.tsx` to fetch `/api/interactions` alongside medicines and refresh both after add/edit/delete.
+- **Visual verification in a real browser** (no headless-browser tooling available in this environment — user ran the click-through manually): signed up a test account, added Uniwarfin (Warfarin) + Ecosprin (Aspirin) via the CDSCO search, confirmed the severe banner appeared and dismissed correctly, the ⚠️ badge showed on both cards, the Edit sheet pre-filled correctly, the two-step delete confirm worked, and `/interactions` rendered the real SEVERE warning with FDA text + disclaimer. All matched expectations, no console errors reported.
+- **Re-audited full Phase 2 completeness and found a real gap**: `src/app/(dashboard)/dashboard/page.tsx` (the actual visible Dashboard) had its own duplicated Prisma queries and a **hardcoded `"—"` Alerts stat** — it never called the interaction engine, despite all of Phase 3's work. The `/api/dashboard/summary` route (Phase 2) was dead code with zero call sites, which masked this. Fixed: dashboard page now calls `checkAllInteractions` directly; deleted the dead route. User confirmed the fix in-browser. Logged in `defects.md`.
+- Phase 2 confirmed fully complete (P2-T1 through P2-T7, including this session's fix). Phase 3 MVP gate confirmed met end-to-end, including on the page a user actually sees.
+
+### Session 17 — 2026-06-17 (Phase 3 kickoff)
+
+- Re-scoped Phase 3 against the actual codebase before implementing: backlog's P3-T1/T2 (RxNorm resolution) were already shipped in Phase 2 (`src/lib/rxnorm.ts`, synchronous resolution on medicine add); backlog's P3-T3/T4 describe a decommissioned RxNav interaction client — followed `architecture.md`'s OpenFDA label-text-mining approach instead.
+- **Found and fixed a real DB blocker**: `interactions_cache.source` had a CHECK constraint of `IN ('rxnav', 'gemini')` — would have rejected every Phase 3 write. Migrated to `IN ('openfda', 'gemini')` directly against the live DB; updated `post-migration.sql` and `schema.prisma` comments to match.
+- **Found and fixed a compliance-text accuracy issue**: the locked medical disclaimer (`legal.ts`) said interaction data is "sourced from the NIH database" — factually wrong now that OpenFDA (FDA) is the source. Updated `MEDICAL_DISCLAIMER.inline`, `.full.source`, and `CONSENT_SCREEN.howWeUseIt` to accurately disclose both NIH RxNorm (name resolution) and OpenFDA (interaction lookup) as third-party recipients of medicine names. Bumped `CONSENT_TEXT_VERSION` to `v1.1-2026-06` per the file's own versioning rule (third-party disclosure changed). Also fixed `signup/route.ts`, which was hardcoding `"v1.0"` instead of importing the constant — the version bump would have been silently ignored otherwise.
+- Built the interaction engine:
+  - `src/lib/clients/openfda.ts` — fetches/caches FDA label `drug_interactions` text per generic name (module-level cache, 5s timeout)
+  - `src/lib/services/interactionEngine.ts` — generates unique rxcui pairs per family member, checks `checked_pairs`/`interactions_cache` first, else queries OpenFDA both directions, classifies severity, caches result
+  - `src/app/api/interactions/route.ts` — GET endpoint, same ownership-verification pattern as `/api/medicines`
+  - `src/app/api/dashboard/summary/route.ts` — real interaction count (was hardcoded 0)
+  - `src/components/interactions/InteractionWarningCard.tsx` + rewired `/interactions` page to real data (filter tabs, loading skeleton, "no interactions" and "data unavailable" states both carry the inline disclaimer per `design-system.md`'s non-negotiable rule)
+- **Live end-to-end verification** (temp test account, created and fully deleted afterward): added Warfarin + Aspirin → correctly detected and classified SEVERE (matches the Phase 0 validation report's expected result) → second call hit cache (no repeat OpenFDA call) → dashboard showed `interactions: 1` → deleted Aspirin → warning disappeared, dashboard showed `interactions: 0`.
+- **Found and fixed a classification bug during that test**: first keyword set used exact bigrams (`"significant bleeding"`, `"monitor closely"`) which didn't match real FDA text (`"closely monitor"`, `"risk of Bleeding"` — different word order/phrasing). Under-classified a textbook-severe anticoagulant+antiplatelet interaction as MODERATE. Fixed to match on single significant terms instead. Logged in `defects.md` along with a string-vs-numeric rxcui ordering gotcha hit while debugging.
+- MVP gate ("interactions detected, cached, displayed") is met. Not yet done: per-medicine interaction badge on `MedicineCard`, `InteractionBanner` for severe warnings, drug-class-based detection enhancements for the 3 known class-based misses (SSRI/opioid/ARB class terms) documented in the Phase 0 report. Production smoke test not run (same reasoning as P2-T7 — same code, same Supabase project as dev).
+
+### Session 16 — 2026-06-17
+
+- P2-T5 completed: Edit & Delete Medicine
+  - `src/components/medicines/EditMedicineSheet.tsx` (new): edits expiry/quantity/dosage via existing `PUT /api/medicines/[id]`, brand/salts shown read-only
+  - `MedicineCard.tsx`: added Edit button; Remove now requires a two-step inline confirm before the DELETE call fires (previously fired immediately)
+  - `medicines/page.tsx`: wired `editingMedicine` state, renders `EditMedicineSheet`, refreshes list on save
+- P2-T7 completed: RLS/isolation verification & Phase 2 wrap-up
+  - Code audit of all medicine/dashboard routes for ownership checks
+  - **Found and fixed an IDOR**: `POST /api/medicines` accepted an optional `family_member_id` from the request body without verifying it belonged to the caller. Fixed to verify ownership before use, 404 otherwise. Not exploitable via current UI (Family Mode is Phase 6) but was live in the API. Logged in `defects.md`.
+  - **Confirmed Prisma bypasses RLS entirely** — it connects via `DATABASE_URL`/`DIRECT_URL` (direct Postgres connection), not the Supabase client, so `rls-policies.sql` policies never apply to Next.js API routes. All isolation is enforced by `user_id`/`family_member` filters in application code. Logged in `defects.md` as a standing audit note for future routes.
+  - Live two-account isolation test: created two temporary Supabase test accounts, ran real HTTP requests against the dev server — confirmed User B cannot list, edit (`PUT` → 404), or delete (`DELETE` → 404) User A's medicine; confirmed the IDOR fix blocks cross-account `family_member_id` injection (404); confirmed dashboard summary counts are per-user. All test accounts and data deleted afterward (verified zero leftover rows).
+  - Production (Vercel) smoke test skipped by user decision — dev-server test already exercised the same code against the same Supabase project.
+- **Phase 2 — Medicine Cabinet (Core CRUD) marked COMPLETE.** Phase 3 (Drug Interaction Engine) is next.
 
 ### Session 1 — 2026-06-08
 - Created project engineering system (.claude folder, all memory files)
@@ -271,4 +339,4 @@ P2-T1: CDSCO Fuse.js search + Add Medicine form
 
 ---
 
-*Last updated: 2026-06-15*
+*Last updated: 2026-06-17*

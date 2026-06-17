@@ -63,9 +63,13 @@ ALTER TABLE interactions_cache
   CHECK (severity IN ('severe', 'moderate', 'mild', 'unknown'));
 
 -- interactions_cache: source
+-- 'rxnav' removed 2026-06-17 — RxNav Drug Interaction API decommissioned (see defects.md, 2026-06-10).
+-- OpenFDA label text mining is the validated replacement (architecture.md).
+-- 'class_rule' added 2026-06-17 — mechanism-based class-pair interactions (e.g. ARB + K-sparing
+-- diuretic) that neither drug's FDA label mentions by name; see src/lib/services/interactionEngine.ts.
 ALTER TABLE interactions_cache
   ADD CONSTRAINT chk_interactions_cache_source
-  CHECK (source IN ('rxnav', 'gemini'));
+  CHECK (source IN ('openfda', 'gemini', 'class_rule'));
 
 -- interactions_cache: severity_ordinal — must match severity values
 -- 1=severe, 2=moderate, 3=mild, 99=unknown

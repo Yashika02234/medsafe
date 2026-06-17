@@ -51,9 +51,19 @@ export async function POST(req: NextRequest) {
 
   const { brand_name, salts, expiry_month_year, quantity, dosage_schedule } = parsed.data;
 
-  // Resolve the family_member_id: use provided or fall back to user's self member
+  // Resolve the family_member_id: use provided (verifying ownership) or fall back to user's self member
   let familyMemberId = parsed.data.family_member_id;
-  if (!familyMemberId) {
+  if (familyMemberId) {
+    const owned = await prisma.family_members.findFirst({
+      where: { id: familyMemberId, user_id: user.id },
+    });
+    if (!owned) {
+      return NextResponse.json(
+        { success: false, error: "Family member not found" },
+        { status: 404 }
+      );
+    }
+  } else {
     const selfMember = await prisma.family_members.findFirst({
       where: { user_id: user.id, is_self: true },
     });

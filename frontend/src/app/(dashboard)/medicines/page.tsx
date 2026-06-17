@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { MedicineCard } from "@/components/medicines/MedicineCard";
 import { AddMedicineSheet } from "@/components/medicines/AddMedicineSheet";
+import { EditMedicineSheet } from "@/components/medicines/EditMedicineSheet";
+import { InteractionBanner } from "@/components/interactions/InteractionBanner";
+import type { InteractionWarning } from "@/types/interaction";
 
 type FilterKey = "all" | "expiring_soon" | "expired";
 
@@ -44,6 +47,8 @@ export default function MedicinesPage() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null);
+  const [warnings, setWarnings] = useState<InteractionWarning[]>([]);
 
   const loadMedicines = useCallback(async () => {
     setLoading(true);
@@ -56,13 +61,33 @@ export default function MedicinesPage() {
     }
   }, []);
 
+  const loadInteractions = useCallback(async () => {
+    try {
+      const res = await fetch("/api/interactions");
+      const data = await res.json();
+      if (data.success) setWarnings(data.data.warnings);
+    } catch {
+      // Interaction data is supplementary here — medicines list still works without it.
+    }
+  }, []);
+
   useEffect(() => {
     loadMedicines();
-  }, [loadMedicines]);
+    loadInteractions();
+  }, [loadMedicines, loadInteractions]);
 
   function handleDelete(id: string) {
     setMedicines((prev) => prev.filter((m) => m.id !== id));
+    loadInteractions();
   }
+
+  function handleMedicinesChanged() {
+    loadMedicines();
+    loadInteractions();
+  }
+
+  const involvedRxcuis = new Set(warnings.flatMap((w) => [w.rxcui_a, w.rxcui_b]));
+  const severeCount = warnings.filter((w) => w.severity === "severe").length;
 
   const filtered =
     filter === "all"
@@ -81,6 +106,8 @@ export default function MedicinesPage() {
             {medicines.length} medicines
           </span>
         </div>
+
+        <InteractionBanner severeCount={severeCount} />
 
         {/* Filter chips */}
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -120,7 +147,15 @@ export default function MedicinesPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {filtered.map((med) => (
-              <MedicineCard key={med.id} medicine={med} onDelete={handleDelete} />
+              <MedicineCard
+                key={med.id}
+                medicine={med}
+                onDelete={handleDelete}
+                onEdit={setEditingMedicine}
+                hasInteraction={med.ingredients.some(
+                  (i) => i.rxcui && involvedRxcuis.has(i.rxcui)
+                )}
+              />
             ))}
           </div>
         )}
@@ -141,7 +176,13 @@ export default function MedicinesPage() {
       <AddMedicineSheet
         isOpen={sheetOpen}
         onClose={() => setSheetOpen(false)}
-        onAdded={loadMedicines}
+        onAdded={handleMedicinesChanged}
+      />
+
+      <EditMedicineSheet
+        medicine={editingMedicine}
+        onClose={() => setEditingMedicine(null)}
+        onUpdated={handleMedicinesChanged}
       />
     </>
   );

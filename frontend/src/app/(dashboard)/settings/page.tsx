@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { SignOutButton } from "./SignOutButton";
+import { NotificationToggle } from "./NotificationToggle";
 
 export default async function SettingsPage() {
   const supabase = createClient();
@@ -12,6 +14,12 @@ export default async function SettingsPage() {
 
   const name = (user.user_metadata?.name as string | undefined) ?? "Unknown";
   const email = user.email ?? "";
+
+  const dbUser = await prisma.users.findUnique({
+    where: { id: user.id },
+    select: { notification_preference: true },
+  });
+  const notificationsEnabled = (dbUser?.notification_preference ?? "email") === "email";
   const initials = name
     .split(" ")
     .map((n) => n.charAt(0).toUpperCase())
@@ -42,10 +50,7 @@ export default async function SettingsPage() {
           Notifications
         </p>
         <div className="bg-[var(--ms-surf)] rounded-2xl border border-[var(--ms-bord)] overflow-hidden">
-          <ToggleRow label="Expiry alerts (30 days)" enabled />
-          <ToggleRow label="Expiry alerts (7 days)" enabled />
-          <ToggleRow label="Expiry alerts (on day)" enabled />
-          <ToggleRow label="Interaction warnings" enabled last />
+          <NotificationToggle initialEnabled={notificationsEnabled} />
         </div>
         <p className="text-[11px] text-[var(--ms-txt3)] mt-2 px-1">
           Notification preferences saved to your account. Email delivery via Resend.
@@ -65,27 +70,11 @@ export default async function SettingsPage() {
 
       {/* Version */}
       <p className="text-[12px] text-[var(--ms-txt3)] text-center">
-        MedSafe v0.1.0 — Phase 1 Build
+        MedSafe v0.1.0 — Phase 3 Build
       </p>
 
       {/* Sign out */}
       <SignOutButton />
-    </div>
-  );
-}
-
-function ToggleRow({ label, enabled, last }: { label: string; enabled: boolean; last?: boolean }) {
-  return (
-    <div className={`flex items-center justify-between px-5 py-4 ${!last ? "border-b border-[var(--ms-bord)]" : ""}`}>
-      <p className="text-[14px] text-[var(--ms-txt)]">{label}</p>
-      <div
-        aria-hidden
-        className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors ${
-          enabled ? "bg-[var(--ms-acc)]" : "bg-[var(--ms-surf2)]"
-        }`}
-      >
-        <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0"}`} />
-      </div>
     </div>
   );
 }

@@ -68,7 +68,7 @@ export default async function FamilyPage() {
           </div>
           <div>
             <p className="text-[13px] font-semibold text-[var(--ms-txt3)]">Add Member</p>
-            <p className="text-[11px] text-[var(--ms-txt3)] mt-0.5 opacity-70">Phase 2</p>
+            <p className="text-[11px] text-[var(--ms-txt3)] mt-0.5 opacity-70">Phase 6</p>
           </div>
         </button>
       </div>
@@ -80,7 +80,7 @@ export default async function FamilyPage() {
         </svg>
         <p className="text-[12px] text-[var(--ms-txt2)] leading-relaxed">
           Family Mode lets you track medicines for parents, children, and other household members — all from one account.{" "}
-          <span className="text-[var(--ms-acc)] font-semibold">Coming in Phase 2.</span>
+          <span className="text-[var(--ms-acc)] font-semibold">Coming in Phase 6.</span>
         </p>
       </div>
     </div>

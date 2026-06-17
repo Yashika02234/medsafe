@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { CONSENT_TEXT_VERSION } from "@/lib/legal";
 
 const SignupSchema = z.object({
   email: z.string().email(),
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
           name,
           consent_given: true,
           consent_given_at: new Date(),
-          consent_text_version: "v1.0",
+          consent_text_version: CONSENT_TEXT_VERSION,
         },
       }),
       prisma.family_members.create({

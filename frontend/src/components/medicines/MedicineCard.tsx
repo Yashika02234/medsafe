@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { formatExpiryDisplay, getExpiryStatus } from "@/lib/utils/expiry";
 
 interface Ingredient {
@@ -13,7 +14,7 @@ interface Medicine {
   id: string;
   brand_name: string;
   generic_name: string | null;
-  expiry_date: string | Date;
+  expiry_date: string;
   quantity: number | null;
   dosage_schedule: string | null;
   resolution_status: string;
@@ -23,6 +24,8 @@ interface Medicine {
 interface MedicineCardProps {
   medicine: Medicine;
   onDelete: (id: string) => void;
+  onEdit: (medicine: Medicine) => void;
+  hasInteraction?: boolean;
 }
 
 const STATUS_CONFIG = {
@@ -43,9 +46,10 @@ const STATUS_CONFIG = {
   },
 } as const;
 
-export function MedicineCard({ medicine, onDelete }: MedicineCardProps) {
+export function MedicineCard({ medicine, onDelete, onEdit, hasInteraction }: MedicineCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const status = getExpiryStatus(medicine.expiry_date);
   const cfg = STATUS_CONFIG[status];
@@ -75,8 +79,16 @@ export function MedicineCard({ medicine, onDelete }: MedicineCardProps) {
         <div className="flex-1 px-4 py-4 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[15px] font-bold text-[var(--ms-txt)] truncate">
+              <p className="text-[15px] font-bold text-[var(--ms-txt)] truncate flex items-center gap-1.5">
                 {medicine.brand_name}
+                {hasInteraction && (
+                  <span
+                    title="Interacts with another medicine in your cabinet"
+                    className="flex-shrink-0 text-[12px]"
+                  >
+                    ⚠️
+                  </span>
+                )}
               </p>
               <p className="text-[12px] text-[var(--ms-txt3)] mt-0.5 truncate">{salts}</p>
             </div>
@@ -129,16 +141,52 @@ export function MedicineCard({ medicine, onDelete }: MedicineCardProps) {
             </p>
           )}
 
-          <div className="flex gap-2 pt-1">
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleting}
-              className="flex-1 bg-[var(--ms-red-bg)] text-[var(--ms-red)] border border-[var(--ms-red)] rounded-xl py-2.5 text-[13px] font-semibold disabled:opacity-50"
+          {hasInteraction && (
+            <Link
+              href="/interactions"
+              className="text-[11px] text-[var(--ms-red)] bg-[var(--ms-red-bg)] rounded-xl px-3 py-2 underline"
             >
-              {deleting ? "Removing…" : "Remove"}
-            </button>
-          </div>
+              Interacts with another medicine — view details
+            </Link>
+          )}
+
+          {confirmingDelete ? (
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                className="flex-1 bg-[var(--ms-surf2)] text-[var(--ms-txt2)] border border-[var(--ms-bord)] rounded-xl py-2.5 text-[13px] font-semibold disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 bg-[var(--ms-red)] text-white rounded-xl py-2.5 text-[13px] font-semibold disabled:opacity-50"
+              >
+                {deleting ? "Removing…" : "Confirm remove"}
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => onEdit(medicine)}
+                className="flex-1 bg-[var(--ms-surf2)] text-[var(--ms-txt2)] border border-[var(--ms-bord)] rounded-xl py-2.5 text-[13px] font-semibold"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="flex-1 bg-[var(--ms-red-bg)] text-[var(--ms-red)] border border-[var(--ms-red)] rounded-xl py-2.5 text-[13px] font-semibold"
+              >
+                Remove
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
