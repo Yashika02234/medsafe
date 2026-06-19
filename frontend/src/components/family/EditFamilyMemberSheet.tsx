@@ -81,13 +81,14 @@ export function EditFamilyMemberSheet({ member, onClose, onUpdated }: EditFamily
         role="dialog"
         aria-modal
         aria-label="Edit family member"
-        className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto bg-[var(--ms-surf)] rounded-t-3xl shadow-2xl"
+        className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto bg-[var(--ms-surf)] rounded-t-3xl shadow-2xl max-h-[85dvh] flex flex-col"
       >
-        <div className="flex justify-center pt-3 pb-1">
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-[var(--ms-bord)]" />
         </div>
 
-        <div className="px-5 pb-8 pt-2 overflow-y-auto max-h-[88vh]">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
+          <div className="px-5 pt-2 overflow-y-auto flex-1 min-h-0">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[18px] font-extrabold text-[var(--ms-txt)] tracking-[-0.5px]">
               Edit Family Member
@@ -104,7 +105,7 @@ export function EditFamilyMemberSheet({ member, onClose, onUpdated }: EditFamily
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 pb-4">
             <div>
               <label htmlFor="edit_member_name" className="block text-[13px] font-medium text-[var(--ms-txt2)] mb-2">
                 Name
@@ -139,7 +140,10 @@ export function EditFamilyMemberSheet({ member, onClose, onUpdated }: EditFamily
                 <p className="mt-1.5 text-sm text-[var(--ms-red)]">{errors.relationship}</p>
               )}
             </div>
+          </div>
+          </div>
 
+          <div className="px-5 pb-8 pt-3 flex-shrink-0 flex flex-col gap-3">
             {serverError && (
               <p role="alert" className="text-sm text-[var(--ms-red)] bg-[var(--ms-red-bg)] rounded-xl px-4 py-3">
                 {serverError}
@@ -149,12 +153,12 @@ export function EditFamilyMemberSheet({ member, onClose, onUpdated }: EditFamily
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-[var(--ms-acc)] text-white rounded-2xl py-[16px] text-[16px] font-semibold disabled:opacity-50 mt-1"
+              className="w-full bg-[var(--ms-acc)] text-white rounded-2xl py-[16px] text-[16px] font-semibold disabled:opacity-50"
             >
               {submitting ? "Saving…" : "Save Changes"}
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </>
   );

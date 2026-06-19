@@ -153,45 +153,47 @@ export function AddMedicineSheet({
         role="dialog"
         aria-modal
         aria-label="Add medicine"
-        className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto bg-[var(--ms-surf)] rounded-t-3xl shadow-2xl"
+        className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto bg-[var(--ms-surf)] rounded-t-3xl shadow-2xl max-h-[85dvh] flex flex-col"
       >
         {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-[var(--ms-bord)]" />
         </div>
 
-        <div className="px-5 pb-8 pt-2 overflow-y-auto max-h-[88vh]">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-[18px] font-extrabold text-[var(--ms-txt)] tracking-[-0.5px]">
-              Add Medicine
-            </h2>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="w-8 h-8 rounded-full bg-[var(--ms-surf2)] flex items-center justify-center"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--ms-txt3)">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-              </svg>
-            </button>
-          </div>
-
-          {scanConfidence !== undefined && (
-            <div
-              className={`mb-4 px-4 py-3 rounded-2xl text-[13px] font-medium ${
-                scanConfidence < 0.7
-                  ? "bg-[var(--ms-amb-bg)] text-[var(--ms-amb)]"
-                  : "bg-[var(--ms-acc-bg)] text-[var(--ms-acc)]"
-              }`}
-            >
-              {scanConfidence < 0.7
-                ? "Scanned — confidence was low, please double-check these details"
-                : "Scanned — please confirm these details"}
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
+          {/* Scrollable fields */}
+          <div className="px-5 pt-2 overflow-y-auto flex-1 min-h-0">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-[18px] font-extrabold text-[var(--ms-txt)] tracking-[-0.5px]">
+                Add Medicine
+              </h2>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="w-8 h-8 rounded-full bg-[var(--ms-surf2)] flex items-center justify-center"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--ms-txt3)">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                </svg>
+              </button>
             </div>
-          )}
 
-          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+            {scanConfidence !== undefined && (
+              <div
+                className={`mb-4 px-4 py-3 rounded-2xl text-[13px] font-medium ${
+                  scanConfidence < 0.7
+                    ? "bg-[var(--ms-amb-bg)] text-[var(--ms-amb)]"
+                    : "bg-[var(--ms-acc-bg)] text-[var(--ms-acc)]"
+                }`}
+              >
+                {scanConfidence < 0.7
+                  ? "Scanned — confidence was low, please double-check these details"
+                  : "Scanned — please confirm these details"}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-4 pb-4">
             {/* Brand name search */}
             <div className="relative">
               <label
@@ -325,7 +327,11 @@ export function AddMedicineSheet({
                 className="w-full bg-[var(--ms-surf2)] border border-[var(--ms-bord)] rounded-2xl px-4 py-[14px] text-[15px] text-[var(--ms-txt)] placeholder:text-[var(--ms-txt3)] outline-none focus:border-[var(--ms-acc)] transition-colors"
               />
             </div>
+            </div>
+          </div>
 
+          {/* Fixed footer — always visible, never needs scrolling to reach */}
+          <div className="px-5 pb-8 pt-3 flex-shrink-0 flex flex-col gap-3">
             {serverError && (
               <p
                 role="alert"
@@ -338,12 +344,12 @@ export function AddMedicineSheet({
             <button
               type="submit"
               disabled={submitting || !selectedEntry}
-              className="w-full bg-[var(--ms-acc)] text-white rounded-2xl py-[16px] text-[16px] font-semibold disabled:opacity-50 mt-1"
+              className="w-full bg-[var(--ms-acc)] text-white rounded-2xl py-[16px] text-[16px] font-semibold disabled:opacity-50"
             >
               {submitting ? "Adding medicine…" : "Add to Cabinet"}
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </>
   );

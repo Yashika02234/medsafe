@@ -124,13 +124,14 @@ export function EditMedicineSheet({ medicine, onClose, onUpdated }: EditMedicine
         role="dialog"
         aria-modal
         aria-label="Edit medicine"
-        className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto bg-[var(--ms-surf)] rounded-t-3xl shadow-2xl"
+        className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto bg-[var(--ms-surf)] rounded-t-3xl shadow-2xl max-h-[85dvh] flex flex-col"
       >
-        <div className="flex justify-center pt-3 pb-1">
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-[var(--ms-bord)]" />
         </div>
 
-        <div className="px-5 pb-8 pt-2 overflow-y-auto max-h-[88vh]">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
+          <div className="px-5 pt-2 overflow-y-auto flex-1 min-h-0">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[18px] font-extrabold text-[var(--ms-txt)] tracking-[-0.5px]">
               Edit Medicine
@@ -147,7 +148,7 @@ export function EditMedicineSheet({ medicine, onClose, onUpdated }: EditMedicine
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 pb-4">
             <div className="bg-[var(--ms-surf2)] rounded-2xl px-4 py-3">
               <p className="text-[11px] text-[var(--ms-txt3)] uppercase tracking-widest mb-1">
                 Medicine
@@ -217,7 +218,10 @@ export function EditMedicineSheet({ medicine, onClose, onUpdated }: EditMedicine
                 className="w-full bg-[var(--ms-surf2)] border border-[var(--ms-bord)] rounded-2xl px-4 py-[14px] text-[15px] text-[var(--ms-txt)] placeholder:text-[var(--ms-txt3)] outline-none focus:border-[var(--ms-acc)] transition-colors"
               />
             </div>
+          </div>
+          </div>
 
+          <div className="px-5 pb-8 pt-3 flex-shrink-0 flex flex-col gap-3">
             {serverError && (
               <p
                 role="alert"
@@ -230,12 +234,12 @@ export function EditMedicineSheet({ medicine, onClose, onUpdated }: EditMedicine
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-[var(--ms-acc)] text-white rounded-2xl py-[16px] text-[16px] font-semibold disabled:opacity-50 mt-1"
+              className="w-full bg-[var(--ms-acc)] text-white rounded-2xl py-[16px] text-[16px] font-semibold disabled:opacity-50"
             >
               {submitting ? "Saving…" : "Save Changes"}
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </>
   );
