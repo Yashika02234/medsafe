@@ -65,7 +65,7 @@ Either: (a) move to Phase 5 (OCR Scanner) and come back to the Phase 4 scheduler
 ## Open Questions
 
 - Project name: "MedSafe" is a working name. Final name TBD (see I-2 in lock checklist).
-- Design ideology: Awaiting design system input (Claude Design / Google Stitch / other). See I-1 in lock checklist.
+- ~~Design ideology~~ — Resolved 2026-06-17: "Midnight Safe" dark theme finalized and documented in `.claude/memory/design-system.md` (implemented Session 15, formalized with audience/personas Session 27).
 - CDSCO data source: primary question for R1 research.
 - RxNorm resolution rate: primary question for R4 research. Determines go/no-go.
 - Gemini fallback: only relevant if R4 < 40%. See R8 in research plan.
