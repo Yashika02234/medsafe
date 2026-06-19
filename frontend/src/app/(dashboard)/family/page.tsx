@@ -1,17 +1,53 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { FamilyMemberCard, type FamilyMember } from "@/components/family/FamilyMemberCard";
+import { AddFamilyMemberSheet } from "@/components/family/AddFamilyMemberSheet";
+import { EditFamilyMemberSheet } from "@/components/family/EditFamilyMemberSheet";
+import { getExpiryStatus } from "@/lib/utils/expiry";
 
-export default async function FamilyPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+interface MedicineForStats {
+  family_member_id: string;
+  expiry_date: string;
+}
 
-  if (!user) redirect("/login");
+export default function FamilyPage() {
+  const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [medicines, setMedicines] = useState<MedicineForStats[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
 
-  const firstName = (user.user_metadata?.name as string | undefined)
-    ?.split(" ")[0] ?? "You";
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [familyRes, medicinesRes] = await Promise.all([
+        fetch("/api/family"),
+        fetch("/api/medicines"),
+      ]);
+      const familyData = await familyRes.json();
+      const medicinesData = await medicinesRes.json();
+      if (familyData.success) setMembers(familyData.data);
+      if (medicinesData.success) setMedicines(medicinesData.data);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  function handleDelete(id: string) {
+    setMembers((prev) => prev.filter((m) => m.id !== id));
+  }
+
+  function statsFor(memberId: string) {
+    const mine = medicines.filter((m) => m.family_member_id === memberId);
+    const expiringSoon = mine.filter((m) => getExpiryStatus(m.expiry_date) !== "safe").length;
+    return { total: mine.length, expiringSoon };
+  }
 
   return (
     <div className="px-5 pt-6 flex flex-col gap-5">
@@ -37,61 +73,54 @@ export default async function FamilyPage() {
       </div>
 
       {/* Member grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Self card */}
-        <div className="bg-[var(--ms-surf)] rounded-2xl p-4 border border-[var(--ms-acc)] flex flex-col gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--ms-acc-bg)] flex items-center justify-center">
-            <span className="text-[var(--ms-acc)] font-extrabold text-[20px]">
-              {firstName.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <p className="text-[14px] font-bold text-[var(--ms-txt)] leading-tight">{firstName}</p>
-            <p className="text-[11px] text-[var(--ms-acc)] font-medium mt-0.5">You (primary)</p>
-          </div>
-          <div className="flex gap-2">
-            <MiniStat label="Meds" value="—" />
-            <MiniStat label="Expiring" value="—" />
-          </div>
+      {loading ? (
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-[160px] bg-[var(--ms-surf)] rounded-2xl animate-pulse border border-[var(--ms-bord)]"
+            />
+          ))}
         </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {members.map((member) => (
+            <FamilyMemberCard
+              key={member.id}
+              member={member}
+              stats={statsFor(member.id)}
+              onEdit={setEditingMember}
+              onDelete={handleDelete}
+            />
+          ))}
 
-        {/* Add member card */}
-        <button
-          type="button"
-          disabled
-          className="bg-transparent rounded-2xl p-4 border border-dashed border-[var(--ms-bord)] flex flex-col items-center justify-center gap-3 text-center min-h-[140px] disabled:opacity-50"
-        >
-          <div className="w-10 h-10 rounded-full bg-[var(--ms-surf)] border border-[var(--ms-bord)] flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--ms-txt3)">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-[13px] font-semibold text-[var(--ms-txt3)]">Add Member</p>
-            <p className="text-[11px] text-[var(--ms-txt3)] mt-0.5 opacity-70">Phase 6</p>
-          </div>
-        </button>
-      </div>
+          {/* Add member card */}
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            className="bg-transparent rounded-2xl p-4 border border-dashed border-[var(--ms-bord)] flex flex-col items-center justify-center gap-3 text-center min-h-[140px]"
+          >
+            <div className="w-10 h-10 rounded-full bg-[var(--ms-surf)] border border-[var(--ms-bord)] flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--ms-acc)">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+              </svg>
+            </div>
+            <p className="text-[13px] font-semibold text-[var(--ms-txt2)]">Add Member</p>
+          </button>
+        </div>
+      )}
 
-      {/* Info banner */}
-      <div className="bg-[var(--ms-acc-bg)] rounded-2xl px-4 py-4 border border-[var(--ms-acc)] flex items-start gap-3">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--ms-acc)" className="flex-shrink-0 mt-0.5">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-        </svg>
-        <p className="text-[12px] text-[var(--ms-txt2)] leading-relaxed">
-          Family Mode lets you track medicines for parents, children, and other household members — all from one account.{" "}
-          <span className="text-[var(--ms-acc)] font-semibold">Coming in Phase 6.</span>
-        </p>
-      </div>
-    </div>
-  );
-}
+      <AddFamilyMemberSheet
+        isOpen={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onAdded={loadData}
+      />
 
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex-1 bg-[var(--ms-surf2)] rounded-xl px-2 py-1.5 text-center">
-      <p className="text-[13px] font-bold text-[var(--ms-txt)]">{value}</p>
-      <p className="text-[10px] text-[var(--ms-txt3)]">{label}</p>
+      <EditFamilyMemberSheet
+        member={editingMember}
+        onClose={() => setEditingMember(null)}
+        onUpdated={loadData}
+      />
     </div>
   );
 }

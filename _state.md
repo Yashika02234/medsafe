@@ -2,11 +2,13 @@
 
 ## Current Phase
 
-Phase 5 — OCR Scanner
+Phase 6 — Family Mode, Polish & Launch
 
-Status: 🔄 IN PROGRESS (P5-T1 through P5-T4 built and verified on Render at <https://medsafe-api-docker.onrender.com>. P5-T5 camera capture UI built and locally smoke-tested (Session 28) — still needs a real-device/real-camera test pass before being called done. Real medicine strip photos still needed to validate real-world OCR accuracy. P5-T6 frontend integration (post-scan review screen) is the prefill into `AddMedicineSheet` built in Session 28 — remaining P5-T6 scope is light, mostly already covered.)
+Status: 🔄 IN PROGRESS (P6-T1 — Family Member CRUD — done, Session 29. Next: P6-T2 — Cabinet Switcher & Scoped Data.)
 
-(Phase 4 — Notifications & Expiry Alerts remains 🔄 PAUSED: code complete, deployed, live email verified — scheduler setup deliberately deferred. Will revisit later.)
+(Phase 5 — OCR Scanner: P5-T1 through P5-T5 done, P5-T6 mostly covered by the same work. P5-T5 verified end-to-end on a real phone — Session 28b: camera permission → capture → upload → OCR → review screen → save into cabinet all confirmed working, via the production Vercel deployment. The one remaining open item: real medicine strip photos still haven't been run through it — the device test used printed text, not an actual strip, so OCR name/expiry accuracy on a real strip is still unvalidated. Deliberately deferred — user chose to move to Phase 6 instead.)
+
+(Phase 4 — Notifications & Expiry Alerts remains 🔄 PAUSED, deliberately deferred again (Session 28b) — user chose to come back to scheduler setup *after* Phase 6 rather than now. Cron-job.org vs. Vercel Cron decision still open when resumed. **Also found a real production blocker while verifying email in this session**: Resend's API key is correctly configured in Vercel, but the Resend account has no verified domain, so its free/sandbox tier only delivers to one fixed address (`202352339@iiitvadodara.ac.in`) — every other real user's expiry alert email will get `status: 'failed'` in `notification_log` and silently never arrive. Confirmed via a live production test (temp medicine on the real account, real cron call, real Resend 403). User has no domain to verify right now — fix when one becomes available: verify it at resend.com/domains, update `RESEND_FROM_EMAIL` to use it. Both this and the scheduler setup are now bundled into the same "revisit after Phase 6" item.)
 
 ---
 
@@ -50,15 +52,17 @@ Status: 🔄 IN PROGRESS (P5-T1 through P5-T4 built and verified on Render at <h
 
 ## Current Task
 
-P5-T5 (camera capture UI) is code-complete (Session 28): live `getUserMedia` scanner at `/scan`, proxied through a new authenticated `POST /api/ocr/scan` route to the FastAPI backend, with results pre-filling the existing `AddMedicineSheet` for user confirmation. `tsc --noEmit`, `eslint`, and `next build` are all clean, and route protection was verified locally (unauthenticated `/scan` and `/medicines` both 307-redirect to `/login`; unauthenticated `POST /api/ocr/scan` 401s). **Not yet tested**: real camera capture end-to-end on an actual device — `getUserMedia` needs HTTPS or `localhost`, so a phone test requires either the deployed Vercel URL or a same-machine browser with a webcam. No real medicine strip photos have been run through the live flow yet.
+P6-T1 (Family Member CRUD) is done (Session 29). Built `/api/family` (GET/POST) and `/api/family/[id]` (PUT/DELETE), both following the exact `requireAuth()` + ownership-check pattern already proven in the medicines routes; the `is_self` member is defense-in-depth blocked from edit/delete at the API layer, not just hidden in the UI. Rewrote `/family` from a static Phase-1 stub into a real client-rendered page backed by `/api/family` + `/api/medicines` (the self card now reflects real DB data instead of just Supabase auth metadata). `tsc`, `eslint`, and `next build` all clean. Verified: unauthenticated requests to every new route correctly 401/307; a real temp account exercised the full create/cascade-delete path directly against the local dev DB (self-protection guard logic confirmed, and deleting a non-self member correctly cascade-deleted their medicine with zero orphaned rows) before being fully cleaned up.
 
-Phase 4 (Notifications & Expiry Alerts) remains separately paused — scheduler setup (cron-job.org or Vercel Cron) deliberately deferred, see Session 21/22. Not blocking Phase 5 work.
+Scope note carried into P6-T2: this task only manages family *members* — there's still no way to actually add a medicine *to* a non-self member yet (no member selector in `AddMedicineSheet`), and `/medicines` still shows everyone's medicines mixed together unfiltered. That's exactly what P6-T2 (Cabinet Switcher & Scoped Data) closes — and per Session 29's exploration, its backend half is already done: `GET /api/medicines` and `GET /api/interactions` already accept an optional `family_member_id` filter (built incidentally in earlier phases), so P6-T2 is mostly frontend work (the switcher component + wiring `POST /api/medicines`'s existing `family_member_id` field into the UI).
+
+Phase 4 (Notifications & Expiry Alerts) and the real-strip-photo OCR validation (Phase 5) both remain deliberately deferred until after Phase 6, per Session 28b.
 
 ---
 
 ## Next Task
 
-Real-device verification of the P5-T5 scan flow (camera permission grant/deny, a real medicine strip photo end-to-end through to saving in the cabinet) — either in a desktop browser with a webcam or on a phone against the deployed Vercel URL. Once verified, P5-T5/T6 can be marked complete and Phase 5 wraps up to just the long-standing real-photo OCR-accuracy validation. Phase 4's scheduler setup remains a separate, deliberately-deferred item to revisit whenever convenient.
+**P6-T2 — Cabinet Switcher & Scoped Data.** Build a `FamilyMemberSwitcher` component, add it to the medicines page, and wire it to the `family_member_id` filtering that already exists on the backend. Also needs a member selector in `AddMedicineSheet` so medicines can actually be added to non-self members (currently impossible through the UI even though P6-T1 lets you create those members).
 
 ---
 
@@ -120,12 +124,27 @@ Real-device verification of the P5-T5 scan flow (camera permission grant/deny, a
 | 2 | Medicine Cabinet (Core CRUD) | ✅ Complete |
 | 3 | Drug Interaction Engine (KEY DIFFERENTIATOR) | ✅ Complete |
 | 4 | Notifications & Expiry Alerts | 🔄 Email send verified, deploy/cron-job.org remain |
-| 5 | OCR Scanner (FastAPI) | 🔄 P5-T1 through P5-T5 done (P5-T5 needs real-device test); real strip photos still needed |
-| 6 | Family Mode, Polish & Launch | ⬜ Not Started |
+| 5 | OCR Scanner (FastAPI) | 🔄 P5-T1 through P5-T5 done & device-verified; real strip photo accuracy still unvalidated |
+| 6 | Family Mode, Polish & Launch | 🔄 P6-T1 done; P6-T2 next (7 tasks remain) |
 
 ---
 
 ## Session Log
+
+### Session 29 — 2026-06-19 (Phase 6 kickoff — P6-T1 Family Member CRUD)
+
+- User chose to defer both the Phase 5 real-strip-photo validation and the Phase 4 scheduler/domain fix until after Phase 6, and start Phase 6 now. Read `project-backlog.md`'s Phase 6 section (8 tasks, 3 milestones: Family Mode → Dashboard/Export → PWA/Polish) and scoped just the first task, P6-T1, rather than planning all 8 at once.
+- Found the schema and parts of the API layer were already further along than the Phase-0-era backlog assumed: `family_members` table, the `relationship` CHECK constraint, and the partial unique index on `is_self` all already existed; `medicines.family_member_id` already cascades on delete through `medicine_ingredients`/`notification_log`/`medicine_scan_log`; and `GET /api/medicines`/`GET /api/interactions` already accept an optional `family_member_id` filter (built incidentally in earlier phases) — meaning P6-T2's backend half is effectively already done.
+- Built P6-T1: `src/lib/validators/family.ts` (shared Zod schema), `api/family/route.ts` (GET/POST) and `api/family/[id]/route.ts` (PUT/DELETE) — both follow the exact `requireAuth()` + ownership-check pattern from the medicines routes, with the `is_self` member defense-in-depth blocked from edit/delete at the API layer (not just hidden in the UI). `FamilyMemberCard.tsx`, `AddFamilyMemberSheet.tsx`, `EditFamilyMemberSheet.tsx` mirror the existing medicines components' two-step-delete and bottom-sheet patterns. Rewrote `/family` from a static Phase-1 stub (self card built from Supabase auth metadata, permanently-disabled "Add Member" button) into a real client component backed by `/api/family` + `/api/medicines`, with real per-member Meds/Expiring stats computed client-side via the existing `getExpiryStatus()` util.
+- `tsc --noEmit`, `eslint`, and `next build` all clean. Verified auth gating via curl (unauthenticated `/family` → 307, all `/api/family*` → 401). Verified the actual CRUD/cascade/self-protection logic with a real temporary account against local dev: signup correctly creates the `is_self` member; creating a second member, adding a medicine under it, then deleting that member correctly cascade-deleted the medicine (confirmed `null` on lookup) with the self member untouched; cleaned up the temp account fully afterward.
+- Explicit scope boundary carried forward: P6-T1 alone does not let you add a medicine *to* a non-self member yet (no member selector in `AddMedicineSheet`) and `/medicines` still shows everyone's medicines unfiltered together — that's P6-T2 (Cabinet Switcher & Scoped Data), next up.
+
+### Session 28b — 2026-06-19 (P5-T5 — real-device verification)
+
+- Resolved several local environment issues blocking backend startup before testing was possible: a stale orphaned `python.exe` from 2026-06-17 was still holding port 8000 (killed it); the user was running commands in cmd.exe rather than PowerShell, so `Activate.ps1` opened in Notepad instead of executing (used `activate.bat` / direct `.venv\Scripts\python.exe -m uvicorn` instead, which sidesteps activation entirely and is more robust regardless of shell).
+- Decided against a local tunnel (cloudflared) once it became clear Vercel was simpler: pushed the 3 pending local commits to `origin/main` (user's explicit choice — matches how every prior phase in this project was deployed, no separate staging branch exists), which triggered the existing Vercel auto-deploy. Added the missing `FASTAPI_BACKEND_URL` env var in the Vercel dashboard (this was flagged as not-yet-added back in Session 23, and the new OCR proxy route is its first real consumer) and redeployed.
+- **User confirmed the full scan flow works end-to-end on a real phone** against the production Vercel URL: camera permission prompt, live capture, upload, OCR call, review screen with confidence badge, pre-filled `AddMedicineSheet`, save into cabinet. Verified the test used printed text to exercise the pipeline, not an actual medicine strip — so this confirms the flow works, not real-world OCR accuracy.
+- Remaining for Phase 5: run real medicine strip photos through the live scanner (the standing gap since P5-T2) to validate actual name/expiry OCR accuracy under real conditions (lighting, glare, foil, real fonts).
 
 ### Session 28 — 2026-06-19 (P5-T5 — camera capture UI)
 
