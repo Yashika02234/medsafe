@@ -4,7 +4,7 @@
 
 Phase 5 — OCR Scanner
 
-Status: 🔄 IN PROGRESS (P5-T1 through P5-T4 built and verified on Render at <https://medsafe-api-docker.onrender.com>. Real medicine strip photos still needed to validate real-world OCR accuracy. P5-T5 camera capture UI and P5-T6 frontend integration not started.)
+Status: 🔄 IN PROGRESS (P5-T1 through P5-T4 built and verified on Render at <https://medsafe-api-docker.onrender.com>. P5-T5 camera capture UI built and locally smoke-tested (Session 28) — still needs a real-device/real-camera test pass before being called done. Real medicine strip photos still needed to validate real-world OCR accuracy. P5-T6 frontend integration (post-scan review screen) is the prefill into `AddMedicineSheet` built in Session 28 — remaining P5-T6 scope is light, mostly already covered.)
 
 (Phase 4 — Notifications & Expiry Alerts remains 🔄 PAUSED: code complete, deployed, live email verified — scheduler setup deliberately deferred. Will revisit later.)
 
@@ -50,15 +50,15 @@ Status: 🔄 IN PROGRESS (P5-T1 through P5-T4 built and verified on Render at <h
 
 ## Current Task
 
-Phase 4 backend is built, deployed to production (<https://medsafe-nine.vercel.app>), and a real email send is confirmed working end-to-end (see Session 21). The cron route is live and correctly rejects unauthenticated requests in production (verified via curl, 401).
+P5-T5 (camera capture UI) is code-complete (Session 28): live `getUserMedia` scanner at `/scan`, proxied through a new authenticated `POST /api/ocr/scan` route to the FastAPI backend, with results pre-filling the existing `AddMedicineSheet` for user confirmation. `tsc --noEmit`, `eslint`, and `next build` are all clean, and route protection was verified locally (unauthenticated `/scan` and `/medicines` both 307-redirect to `/login`; unauthenticated `POST /api/ocr/scan` 401s). **Not yet tested**: real camera capture end-to-end on an actual device — `getUserMedia` needs HTTPS or `localhost`, so a phone test requires either the deployed Vercel URL or a same-machine browser with a webcam. No real medicine strip photos have been run through the live flow yet.
 
-**Deliberately paused here**: scheduler setup (cron-job.org or Vercel Cron) decided against for now — user chose to defer rather than set it up immediately. Without a scheduler, `/api/cron/check-expiry` works but nothing calls it automatically, so no real notification emails go out yet. Phase 4 is not being marked complete until this is revisited.
+Phase 4 (Notifications & Expiry Alerts) remains separately paused — scheduler setup (cron-job.org or Vercel Cron) deliberately deferred, see Session 21/22. Not blocking Phase 5 work.
 
 ---
 
 ## Next Task
 
-Either: (a) move to Phase 5 (OCR Scanner) and come back to the Phase 4 scheduler later, or (b) set up the scheduler now — options on the table: cron-job.org (free, matches the locked `tech-stack.md` decision) or Vercel's native Cron Jobs (no third-party signup, free on Hobby plan, capped at once/day — would need explicit approval to change the locked tech-stack decision).
+Real-device verification of the P5-T5 scan flow (camera permission grant/deny, a real medicine strip photo end-to-end through to saving in the cabinet) — either in a desktop browser with a webcam or on a phone against the deployed Vercel URL. Once verified, P5-T5/T6 can be marked complete and Phase 5 wraps up to just the long-standing real-photo OCR-accuracy validation. Phase 4's scheduler setup remains a separate, deliberately-deferred item to revisit whenever convenient.
 
 ---
 
@@ -120,12 +120,33 @@ Either: (a) move to Phase 5 (OCR Scanner) and come back to the Phase 4 scheduler
 | 2 | Medicine Cabinet (Core CRUD) | ✅ Complete |
 | 3 | Drug Interaction Engine (KEY DIFFERENTIATOR) | ✅ Complete |
 | 4 | Notifications & Expiry Alerts | 🔄 Email send verified, deploy/cron-job.org remain |
-| 5 | OCR Scanner (FastAPI) | 🔄 P5-T1 through P5-T4 done; P5-T5/T6 remain |
+| 5 | OCR Scanner (FastAPI) | 🔄 P5-T1 through P5-T5 done (P5-T5 needs real-device test); real strip photos still needed |
 | 6 | Family Mode, Polish & Launch | ⬜ Not Started |
 
 ---
 
 ## Session Log
+
+### Session 28 — 2026-06-19 (P5-T5 — camera capture UI)
+
+- Found uncommitted work from a prior, undocumented session at the start of this session: `.claude/memory/design-system.md`'s formalization (see Session 27 below, logged retroactively) and a new, unwired `frontend/src/lib/utils/imageCompression.ts`. Reviewed both, confirmed they were sound, committed them before starting new work.
+- Built P5-T5 (camera capture UI), per user's explicit choice of a real live `getUserMedia` viewfinder over a simpler native-camera-input alternative (asked directly — the simpler option was recommended but the user wanted the in-app viewfinder matching `design-system.md` literally):
+  - `frontend/src/components/scan/CameraCapture.tsx` — owns the camera stream lifecycle (request/stop on mount/unmount), a guide-frame overlay using the pre-existing but previously-unused `scanLine` CSS keyframe (`globals.css:29`), capture-to-canvas, and calls the new proxy route. Falls back to a manual `<input type="file">` if `getUserMedia` is denied/unsupported, so the feature degrades instead of dead-ending.
+  - `frontend/src/app/(dashboard)/scan/page.tsx` — thin route wrapper; stashes the scan result in `sessionStorage` (`frontend/src/lib/utils/scanHandoff.ts`) and navigates to `/medicines?scanned=1` on continue.
+  - `frontend/src/app/api/ocr/scan/route.ts` — new authenticated (`requireAuth()`) proxy route, server-to-server call to the FastAPI backend per the locked architecture decision (frontend never calls FastAPI directly). Maps FastAPI's `{error, message}` bodies into the project's `{success, error, code}` envelope.
+  - `frontend/src/lib/utils/normalizeExpiryDate.ts` — converts the OCR backend's possible expiry formats (`MM/YYYY`, `MM-YYYY`, `DEC/YYYY` etc.) into the form's required `MM/YYYY` digit string; returns `null` (field left blank) rather than guess wrong.
+  - `AddMedicineSheet.tsx` gained optional prefill props (`initialBrandQuery`, `initialExpiry`, `scanConfidence`) and a confidence banner — **reused as-is rather than building a second add-medicine path**, because `POST /api/medicines` requires a `salts[]` array that only comes from picking a CDSCO entry via the existing Fuse.js search, and OCR can never supply that — so the scan result can only pre-fill the existing search, never bypass it.
+  - `medicines/page.tsx` reads the `?scanned=1` handoff on mount and auto-opens the sheet pre-filled.
+  - `BottomNav.tsx` FAB now links to `/scan` instead of `/medicines` (scanning is now the primary add path; manual entry is still one tap away via the existing FAB on the medicines page itself).
+  - `.env.example`: renamed `FASTAPI_URL` → `FASTAPI_BACKEND_URL` to match what `security.md`/`_state.md` already documented (was unused by any code, so a safe rename).
+- **Found and fixed a real security gap during manual verification**, not caught by `tsc`/`eslint`/`next build`: `src/middleware.ts`'s `PROTECTED_PREFIXES` is a hardcoded allowlist, and the new `/scan` route was never added to it — confirmed via curl that `/scan` returned 200 (fully accessible) to an unauthenticated request while every other dashboard route correctly 307-redirected to `/login`. The OCR proxy route itself was still safely behind `requireAuth()` (401), so no data could actually be scanned, but the camera UI itself was reachable pre-login. Fixed by adding `/scan` to `PROTECTED_PREFIXES`; re-verified with curl that it now redirects like the rest. Logged in `defects.md` — same root-cause shape as the Session 16 IDOR finding ("don't assume a new route inherits protection — verify explicitly").
+- Verified: `npx tsc --noEmit` clean, `eslint` clean (one `react/no-unescaped-entities` fix), `next build` succeeds and lists `/scan` and `/api/ocr/scan` in the route table, local curl smoke test confirms auth gating on all three new/touched routes.
+- **Not yet verified**: actual camera capture on a real device — no camera/browser-automation tooling available in this environment, and `getUserMedia` needs HTTPS or `localhost` (a phone on the same LAN can't reach a plain-HTTP dev server). Also no real medicine strip photos run through the live flow yet. Both remain explicit open items before P5-T5/T6 are called fully done.
+
+### Session 27 — 2026-06-17 (retroactively logged — design-system.md formalization)
+
+- This session's work was found uncommitted at the start of Session 28 (not logged in `_state.md` at the time, likely an interrupted session). Reconstructed from the diff: `.claude/memory/design-system.md` was rewritten from `STATUS: PLACEHOLDER` to `STATUS: FINALIZED`, adding the three user personas (household manager / juggler / person living alone), a "how it should feel" section, and the full `--ms-*` color token reference table — documenting the Midnight Safe theme that has actually been live in code since Session 15, rather than describing it as still pending.
+- Reviewed and committed in Session 28 after confirming it accurately reflects the already-shipped UI (cross-checked token names against `globals.css`).
 
 ### Session 26 — 2026-06-17 (P5-T4 — OCR API endpoint)
 

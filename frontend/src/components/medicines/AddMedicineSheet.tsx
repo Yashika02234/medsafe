@@ -8,6 +8,9 @@ interface AddMedicineSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onAdded: () => void;
+  initialBrandQuery?: string;
+  initialExpiry?: string;
+  scanConfidence?: number;
 }
 
 const FormSchema = z.object({
@@ -20,7 +23,14 @@ const FormSchema = z.object({
   dosage_schedule: z.string().optional(),
 });
 
-export function AddMedicineSheet({ isOpen, onClose, onAdded }: AddMedicineSheetProps) {
+export function AddMedicineSheet({
+  isOpen,
+  onClose,
+  onAdded,
+  initialBrandQuery,
+  initialExpiry,
+  scanConfidence,
+}: AddMedicineSheetProps) {
   const { results, search, clear, loading: searchLoading } = useMedicineSearch();
   const [brandQuery, setBrandQuery] = useState("");
   const [selectedEntry, setSelectedEntry] = useState<CdscoEntry | null>(null);
@@ -33,20 +43,24 @@ export function AddMedicineSheet({ isOpen, onClose, onAdded }: AddMedicineSheetP
   const [serverError, setServerError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset form when sheet opens
+  // Reset form when sheet opens — pre-fill from a scan result if provided
   useEffect(() => {
     if (isOpen) {
-      setBrandQuery("");
+      setBrandQuery(initialBrandQuery ?? "");
       setSelectedEntry(null);
-      setExpiryMonthYear("");
+      setExpiryMonthYear(initialExpiry ?? "");
       setQuantity("");
       setDosage("");
       setErrors({});
       setServerError("");
       clear();
+      if (initialBrandQuery) {
+        setShowDropdown(true);
+        search(initialBrandQuery);
+      }
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, clear]);
+  }, [isOpen, clear, search, initialBrandQuery, initialExpiry]);
 
   function handleBrandInput(value: string) {
     setBrandQuery(value);
@@ -162,6 +176,20 @@ export function AddMedicineSheet({ isOpen, onClose, onAdded }: AddMedicineSheetP
               </svg>
             </button>
           </div>
+
+          {scanConfidence !== undefined && (
+            <div
+              className={`mb-4 px-4 py-3 rounded-2xl text-[13px] font-medium ${
+                scanConfidence < 0.7
+                  ? "bg-[var(--ms-amb-bg)] text-[var(--ms-amb)]"
+                  : "bg-[var(--ms-acc-bg)] text-[var(--ms-acc)]"
+              }`}
+            >
+              {scanConfidence < 0.7
+                ? "Scanned — confidence was low, please double-check these details"
+                : "Scanned — please confirm these details"}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
             {/* Brand name search */}

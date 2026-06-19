@@ -43,8 +43,8 @@ export function BottomNav() {
             return (
               <li key="add" className="flex-1 flex justify-center relative -top-[14px]">
                 <Link
-                  href="/medicines"
-                  aria-label="Add medicine"
+                  href="/scan"
+                  aria-label="Scan medicine"
                   className="w-[54px] h-[54px] rounded-full bg-[var(--ms-acc)] flex items-center justify-center no-underline nav-fab-shadow"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="white">

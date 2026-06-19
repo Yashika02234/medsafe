@@ -20,6 +20,14 @@
 
 ## Logged Defects
 
+### 2026-06-19 (Phase 5 — new /scan route missing from middleware allowlist)
+
+**Problem:** `src/middleware.ts` protects routes via a hardcoded `PROTECTED_PREFIXES` array, not a "protect everything except an explicit public list." When the new `/scan` route (P5-T5, camera capture UI) was added, it was never added to that array. Confirmed via curl that an unauthenticated request to `/scan` returned 200 (the full camera UI rendered) while every other dashboard route correctly 307-redirected to `/login`. Not caught by `tsc`, `eslint`, or `next build` — only found by manually curling the new route post-build.
+
+**Cause:** Adding a new top-level route under `(dashboard)/` does not automatically inherit auth protection in this codebase — protection is opt-in per route prefix, not the default. Built the page, the proxy API route (which *was* correctly protected via `requireAuth()`), and the UI flow, but didn't think to also check `middleware.ts` since it's a separate file with no obvious connection to a new page route.
+
+**Rule:** Same root-cause shape as the Session 16 IDOR finding below — whenever a new top-level page route is added under `(dashboard)/`, explicitly add it to `PROTECTED_PREFIXES` in `src/middleware.ts` and verify with an unauthenticated curl request (expect 307, not 200) before considering the route done. Don't assume a new route is protected just because the API route it calls is — the UI route and the API route are gated independently in this codebase.
+
 ### 2026-06-17 (Phase 5 — Tesseract line_num grouping bug)
 
 **Problem:** `parse_medicine_name`'s "biggest-font line" heuristic grouped OCR words by `line_num` alone. On a real two-line strip image (brand name + expiry date), it returned both lines concatenated together (`"DOLO 650 EXP: 09/2027"`) instead of just the brand name. The existing parametrized test suite didn't catch this — its assertion was `brand.split()[0] in medicine_name`, a substring check that's still true even when the expiry line is wrongly appended.

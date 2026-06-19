@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { MedicineCard } from "@/components/medicines/MedicineCard";
 import { AddMedicineSheet } from "@/components/medicines/AddMedicineSheet";
 import { EditMedicineSheet } from "@/components/medicines/EditMedicineSheet";
 import { InteractionBanner } from "@/components/interactions/InteractionBanner";
+import { consumeScanResult } from "@/lib/utils/scanHandoff";
+import { normalizeExpiryDate } from "@/lib/utils/normalizeExpiryDate";
 import type { InteractionWarning } from "@/types/interaction";
 
 type FilterKey = "all" | "expiring_soon" | "expired";
@@ -42,13 +45,34 @@ function getStatus(expiryDate: string) {
   return "safe";
 }
 
+interface ScanPrefill {
+  brandQuery: string;
+  expiry: string;
+  confidence: number;
+}
+
 export default function MedicinesPage() {
+  const router = useRouter();
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null);
   const [warnings, setWarnings] = useState<InteractionWarning[]>([]);
+  const [scanPrefill, setScanPrefill] = useState<ScanPrefill | null>(null);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("scanned") !== "1") return;
+    const scanResult = consumeScanResult();
+    router.replace("/medicines");
+    if (!scanResult) return;
+    setScanPrefill({
+      brandQuery: scanResult.medicine_name ?? "",
+      expiry: normalizeExpiryDate(scanResult.expiry_date) ?? "",
+      confidence: scanResult.confidence_score,
+    });
+    setSheetOpen(true);
+  }, [router]);
 
   const loadMedicines = useCallback(async () => {
     setLoading(true);
@@ -175,8 +199,14 @@ export default function MedicinesPage() {
 
       <AddMedicineSheet
         isOpen={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+        onClose={() => {
+          setSheetOpen(false);
+          setScanPrefill(null);
+        }}
         onAdded={handleMedicinesChanged}
+        initialBrandQuery={scanPrefill?.brandQuery}
+        initialExpiry={scanPrefill?.expiry}
+        scanConfidence={scanPrefill?.confidence}
       />
 
       <EditMedicineSheet

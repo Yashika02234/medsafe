@@ -8,6 +8,7 @@ const PROTECTED_PREFIXES = [
   "/family",
   "/settings",
   "/cabinet",
+  "/scan",
 ];
 
 const AUTH_ROUTES = ["/login", "/signup"];
