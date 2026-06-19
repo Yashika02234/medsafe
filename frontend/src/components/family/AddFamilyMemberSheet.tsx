@@ -87,7 +87,7 @@ export function AddFamilyMemberSheet({ isOpen, onClose, onAdded }: AddFamilyMemb
           <div className="w-10 h-1 rounded-full bg-[var(--ms-bord)]" />
         </div>
 
-        <div className="px-5 pb-8 pt-2">
+        <div className="px-5 pb-8 pt-2 overflow-y-auto max-h-[88vh]">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[18px] font-extrabold text-[var(--ms-txt)] tracking-[-0.5px]">
               Add Family Member
