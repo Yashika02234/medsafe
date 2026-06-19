@@ -145,7 +145,7 @@ export function CameraCapture({ onContinue, onCancel }: CameraCaptureProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[var(--ms-page-bg)] flex flex-col max-w-lg mx-auto">
+    <div className="fixed inset-0 z-[60] bg-[var(--ms-page-bg)] flex flex-col max-w-lg mx-auto">
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Header */}
