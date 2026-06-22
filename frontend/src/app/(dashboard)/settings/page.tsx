@@ -70,7 +70,7 @@ export default async function SettingsPage() {
 
       {/* Version */}
       <p className="text-[12px] text-[var(--ms-txt3)] text-center">
-        MedSafe v0.1.0 — Phase 3 Build
+        MedSafe v0.1.0
       </p>
 
       {/* Sign out */}

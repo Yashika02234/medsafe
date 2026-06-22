@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { InteractionWarningCard } from "@/components/interactions/InteractionWarningCard";
+import { FamilyMemberSwitcher } from "@/components/family/FamilyMemberSwitcher";
+import type { FamilyMember } from "@/components/family/FamilyMemberCard";
 import { MEDICAL_DISCLAIMER } from "@/lib/legal";
 import type { InteractionWarning, InteractionSeverity } from "@/types/interaction";
 
@@ -15,30 +17,60 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 ];
 
 export default function InteractionsPage() {
+  const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<InteractionWarning[]>([]);
   const [uncheckedCount, setUncheckedCount] = useState(0);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  useEffect(() => {
+    (async () => {
+      const res = await fetch("/api/family");
+      const data = await res.json();
+      if (data.success) setMembers(data.data);
+    })();
+  }, []);
+
+  // "All" has no single meaning for interactions (they're inherently single-person),
+  // so this merges one call per member — same approach as /medicines.
   const load = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch("/api/interactions");
-      const data = await res.json();
-      if (data.success) {
-        setWarnings(data.data.warnings);
-        setUncheckedCount(data.data.uncheckedCount);
-      } else {
-        setError(true);
+      if (selectedMemberId) {
+        const res = await fetch(`/api/interactions?family_member_id=${selectedMemberId}`);
+        const data = await res.json();
+        if (data.success) {
+          setWarnings(data.data.warnings);
+          setUncheckedCount(data.data.uncheckedCount);
+        } else {
+          setError(true);
+        }
+        return;
       }
+
+      if (members.length === 0) {
+        setWarnings([]);
+        setUncheckedCount(0);
+        return;
+      }
+      const results = await Promise.all(
+        members.map(async (member) => {
+          const res = await fetch(`/api/interactions?family_member_id=${member.id}`);
+          const data = await res.json();
+          return data.success ? data.data : { warnings: [], uncheckedCount: 0 };
+        })
+      );
+      setWarnings(results.flatMap((r) => r.warnings));
+      setUncheckedCount(results.reduce((sum, r) => sum + r.uncheckedCount, 0));
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedMemberId, members]);
 
   useEffect(() => {
     load();
@@ -56,6 +88,12 @@ export default function InteractionsPage() {
           Drug interaction checks across your cabinet
         </p>
       </div>
+
+      <FamilyMemberSwitcher
+        members={members}
+        selectedId={selectedMemberId}
+        onSelect={setSelectedMemberId}
+      />
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {FILTERS.map(({ key, label }) => (
@@ -95,8 +133,15 @@ export default function InteractionsPage() {
           </p>
           <p className="text-[13px] text-[var(--ms-txt3)] text-center max-w-[260px]">
             We couldn&apos;t check for interactions right now. This doesn&apos;t mean your
-            medicines are safe to combine — please try again later.
+            medicines are safe to combine — please try again.
           </p>
+          <button
+            type="button"
+            onClick={load}
+            className="bg-[var(--ms-acc)] text-white rounded-2xl px-6 py-[10px] text-[14px] font-semibold"
+          >
+            Retry
+          </button>
           <p className="text-[11px] text-[var(--ms-txt3)] italic text-center max-w-[280px]">
             {MEDICAL_DISCLAIMER.inline}
           </p>

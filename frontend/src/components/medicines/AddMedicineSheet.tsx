@@ -3,11 +3,14 @@
 import { useState, useRef, useEffect } from "react";
 import { z } from "zod";
 import { useMedicineSearch, type CdscoEntry } from "@/hooks/useMedicineSearch";
+import type { FamilyMember } from "@/components/family/FamilyMemberCard";
 
 interface AddMedicineSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onAdded: () => void;
+  members: FamilyMember[];
+  defaultMemberId?: string | null;
   initialBrandQuery?: string;
   initialExpiry?: string;
   scanConfidence?: number;
@@ -27,6 +30,8 @@ export function AddMedicineSheet({
   isOpen,
   onClose,
   onAdded,
+  members,
+  defaultMemberId,
   initialBrandQuery,
   initialExpiry,
   scanConfidence,
@@ -38,6 +43,7 @@ export function AddMedicineSheet({
   const [expiryMonthYear, setExpiryMonthYear] = useState("");
   const [quantity, setQuantity] = useState("");
   const [dosage, setDosage] = useState("");
+  const [selectedMemberId, setSelectedMemberId] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -51,6 +57,8 @@ export function AddMedicineSheet({
       setExpiryMonthYear(initialExpiry ?? "");
       setQuantity("");
       setDosage("");
+      const selfMember = members.find((m) => m.is_self);
+      setSelectedMemberId(defaultMemberId ?? selfMember?.id ?? "");
       setErrors({});
       setServerError("");
       clear();
@@ -60,7 +68,7 @@ export function AddMedicineSheet({
       }
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, clear, search, initialBrandQuery, initialExpiry]);
+  }, [isOpen, clear, search, initialBrandQuery, initialExpiry, defaultMemberId, members]);
 
   function handleBrandInput(value: string) {
     setBrandQuery(value);
@@ -116,6 +124,7 @@ export function AddMedicineSheet({
         body: JSON.stringify({
           brand_name: parsed.data.brand_name,
           salts: parsed.data.salts,
+          family_member_id: selectedMemberId || undefined,
           expiry_month_year: parsed.data.expiry_month_year,
           quantity: parsed.data.quantity ? parseInt(parsed.data.quantity, 10) : undefined,
           dosage_schedule: parsed.data.dosage_schedule || undefined,
@@ -194,6 +203,30 @@ export function AddMedicineSheet({
             )}
 
             <div className="flex flex-col gap-4 pb-4">
+            {/* Family member selector — only shown once there's more than just yourself */}
+            {members.length > 1 && (
+              <div>
+                <label
+                  htmlFor="family_member"
+                  className="block text-[13px] font-medium text-[var(--ms-txt2)] mb-2"
+                >
+                  Add to
+                </label>
+                <select
+                  id="family_member"
+                  value={selectedMemberId}
+                  onChange={(e) => setSelectedMemberId(e.target.value)}
+                  className="w-full bg-[var(--ms-surf2)] border border-[var(--ms-bord)] rounded-2xl px-4 py-[14px] text-[15px] text-[var(--ms-txt)] outline-none focus:border-[var(--ms-acc)] transition-colors"
+                >
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.is_self ? "You" : member.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Brand name search */}
             <div className="relative">
               <label

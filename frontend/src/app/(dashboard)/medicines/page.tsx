@@ -6,6 +6,8 @@ import { MedicineCard } from "@/components/medicines/MedicineCard";
 import { AddMedicineSheet } from "@/components/medicines/AddMedicineSheet";
 import { EditMedicineSheet } from "@/components/medicines/EditMedicineSheet";
 import { InteractionBanner } from "@/components/interactions/InteractionBanner";
+import { FamilyMemberSwitcher } from "@/components/family/FamilyMemberSwitcher";
+import type { FamilyMember } from "@/components/family/FamilyMemberCard";
 import { consumeScanResult } from "@/lib/utils/scanHandoff";
 import { normalizeExpiryDate } from "@/lib/utils/normalizeExpiryDate";
 import type { InteractionWarning } from "@/types/interaction";
@@ -20,6 +22,7 @@ interface Ingredient {
 
 interface Medicine {
   id: string;
+  family_member_id: string;
   brand_name: string;
   generic_name: string | null;
   expiry_date: string;
@@ -27,6 +30,10 @@ interface Medicine {
   dosage_schedule: string | null;
   resolution_status: string;
   ingredients: Ingredient[];
+}
+
+interface TaggedWarning extends InteractionWarning {
+  family_member_id: string;
 }
 
 const FILTERS: { key: FilterKey; label: string }[] = [
@@ -54,11 +61,18 @@ interface ScanPrefill {
 export default function MedicinesPage() {
   const router = useRouter();
   const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(() =>
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("member")
+  );
   const [filter, setFilter] = useState<FilterKey>("all");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null);
-  const [warnings, setWarnings] = useState<InteractionWarning[]>([]);
+  const [warnings, setWarnings] = useState<TaggedWarning[]>([]);
   const [scanPrefill, setScanPrefill] = useState<ScanPrefill | null>(null);
 
   useEffect(() => {
@@ -74,26 +88,71 @@ export default function MedicinesPage() {
     setSheetOpen(true);
   }, [router]);
 
+  const loadFamily = useCallback(async () => {
+    const res = await fetch("/api/family");
+    const data = await res.json();
+    if (data.success) setMembers(data.data);
+  }, []);
+
   const loadMedicines = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
-      const res = await fetch("/api/medicines");
+      const url = selectedMemberId
+        ? `/api/medicines?family_member_id=${selectedMemberId}`
+        : "/api/medicines";
+      const res = await fetch(url);
       const data = await res.json();
       if (data.success) setMedicines(data.data);
+      else setLoadError(true);
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedMemberId]);
 
+  // When a specific member is selected, fetch their interactions only. When "All" is
+  // selected, fetch per-member (interactions only ever make sense within one person's
+  // medicines) and merge, tagging each warning with its owner so a medicine never gets
+  // flagged by a warning that belongs to someone else's cabinet.
   const loadInteractions = useCallback(async () => {
     try {
-      const res = await fetch("/api/interactions");
-      const data = await res.json();
-      if (data.success) setWarnings(data.data.warnings);
+      if (selectedMemberId) {
+        const res = await fetch(`/api/interactions?family_member_id=${selectedMemberId}`);
+        const data = await res.json();
+        if (data.success) {
+          setWarnings(
+            data.data.warnings.map((w: InteractionWarning) => ({
+              ...w,
+              family_member_id: selectedMemberId,
+            }))
+          );
+        }
+        return;
+      }
+
+      if (members.length === 0) return;
+      const results = await Promise.all(
+        members.map(async (member) => {
+          const res = await fetch(`/api/interactions?family_member_id=${member.id}`);
+          const data = await res.json();
+          if (!data.success) return [];
+          return data.data.warnings.map((w: InteractionWarning) => ({
+            ...w,
+            family_member_id: member.id,
+          }));
+        })
+      );
+      setWarnings(results.flat());
     } catch {
       // Interaction data is supplementary here — medicines list still works without it.
     }
-  }, []);
+  }, [selectedMemberId, members]);
+
+  useEffect(() => {
+    loadFamily();
+  }, [loadFamily]);
 
   useEffect(() => {
     loadMedicines();
@@ -110,7 +169,13 @@ export default function MedicinesPage() {
     loadInteractions();
   }
 
-  const involvedRxcuis = new Set(warnings.flatMap((w) => [w.rxcui_a, w.rxcui_b]));
+  const involvedByMember = new Map<string, Set<string>>();
+  for (const w of warnings) {
+    const set = involvedByMember.get(w.family_member_id) ?? new Set<string>();
+    set.add(w.rxcui_a);
+    set.add(w.rxcui_b);
+    involvedByMember.set(w.family_member_id, set);
+  }
   const severeCount = warnings.filter((w) => w.severity === "severe").length;
 
   const filtered =
@@ -132,6 +197,25 @@ export default function MedicinesPage() {
         </div>
 
         <InteractionBanner severeCount={severeCount} />
+
+        <FamilyMemberSwitcher
+          members={members}
+          selectedId={selectedMemberId}
+          onSelect={setSelectedMemberId}
+        />
+
+        {/* Export only makes sense for one person's medicines at a time */}
+        {selectedMemberId && (
+          <a
+            href={`/medicines/export?member=${selectedMemberId}`}
+            className="self-start flex items-center gap-1.5 text-[12px] font-semibold text-[var(--ms-acc)] no-underline"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--ms-acc)">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+            </svg>
+            Export for Doctor
+          </a>
+        )}
 
         {/* Filter chips */}
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -166,6 +250,22 @@ export default function MedicinesPage() {
               />
             ))}
           </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <p className="text-[15px] font-semibold text-[var(--ms-txt)]">
+              Couldn&apos;t load your medicines
+            </p>
+            <p className="text-[13px] text-[var(--ms-txt3)] text-center max-w-[260px]">
+              Something went wrong. Please check your connection and try again.
+            </p>
+            <button
+              type="button"
+              onClick={loadMedicines}
+              className="bg-[var(--ms-acc)] text-white rounded-2xl px-6 py-[10px] text-[14px] font-semibold"
+            >
+              Retry
+            </button>
+          </div>
         ) : filtered.length === 0 ? (
           <EmptyState filter={filter} onAdd={() => setSheetOpen(true)} />
         ) : (
@@ -177,7 +277,7 @@ export default function MedicinesPage() {
                 onDelete={handleDelete}
                 onEdit={setEditingMedicine}
                 hasInteraction={med.ingredients.some(
-                  (i) => i.rxcui && involvedRxcuis.has(i.rxcui)
+                  (i) => i.rxcui && involvedByMember.get(med.family_member_id)?.has(i.rxcui)
                 )}
               />
             ))}
@@ -204,6 +304,8 @@ export default function MedicinesPage() {
           setScanPrefill(null);
         }}
         onAdded={handleMedicinesChanged}
+        members={members}
+        defaultMemberId={selectedMemberId}
         initialBrandQuery={scanPrefill?.brandQuery}
         initialExpiry={scanPrefill?.expiry}
         scanConfidence={scanPrefill?.confidence}

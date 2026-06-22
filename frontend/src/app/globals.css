@@ -79,6 +79,25 @@
     --ms-page-bg:   #060F1C;
   }
 
+  /* Midnight Safe is a dark theme everywhere except print — printing it as-is
+     wastes ink and is unreadable on paper, so the doctor-visit export flips
+     to light/ink-friendly colors only inside @media print. */
+  @media print {
+    :root {
+      --ms-bg:     #ffffff;
+      --ms-surf:   #ffffff;
+      --ms-surf2:  #f5f5f5;
+      --ms-bord:   #cccccc;
+      --ms-txt:    #111111;
+      --ms-txt2:   #333333;
+      --ms-txt3:   #666666;
+    }
+
+    table tr {
+      break-inside: avoid;
+    }
+  }
+
   * {
     box-sizing: border-box;
     border-color: var(--ms-bord);

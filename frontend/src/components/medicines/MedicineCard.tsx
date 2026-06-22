@@ -12,6 +12,7 @@ interface Ingredient {
 
 interface Medicine {
   id: string;
+  family_member_id: string;
   brand_name: string;
   generic_name: string | null;
   expiry_date: string;

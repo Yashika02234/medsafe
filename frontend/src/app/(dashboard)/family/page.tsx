@@ -16,11 +16,13 @@ export default function FamilyPage() {
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [medicines, setMedicines] = useState<MedicineForStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const [familyRes, medicinesRes] = await Promise.all([
         fetch("/api/family"),
@@ -29,7 +31,10 @@ export default function FamilyPage() {
       const familyData = await familyRes.json();
       const medicinesData = await medicinesRes.json();
       if (familyData.success) setMembers(familyData.data);
+      else setLoadError(true);
       if (medicinesData.success) setMedicines(medicinesData.data);
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -81,6 +86,22 @@ export default function FamilyPage() {
               className="h-[160px] bg-[var(--ms-surf)] rounded-2xl animate-pulse border border-[var(--ms-bord)]"
             />
           ))}
+        </div>
+      ) : loadError ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-4">
+          <p className="text-[15px] font-semibold text-[var(--ms-txt)]">
+            Couldn&apos;t load your family
+          </p>
+          <p className="text-[13px] text-[var(--ms-txt3)] text-center max-w-[260px]">
+            Something went wrong. Please check your connection and try again.
+          </p>
+          <button
+            type="button"
+            onClick={loadData}
+            className="bg-[var(--ms-acc)] text-white rounded-2xl px-6 py-[10px] text-[14px] font-semibold"
+          >
+            Retry
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">

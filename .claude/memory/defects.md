@@ -20,6 +20,14 @@
 
 ## Logged Defects
 
+### 2026-06-22 (Phase 6 — service worker cache fallback would have bypassed auth redirects)
+
+**Problem:** The first draft of `public/sw.js` (P6-T5, PWA config) used a network-first-then-cache-fallback strategy for *all* page navigations: on fetch failure, serve whatever was last cached for that URL. Caught before shipping, not after: a service worker's `fetch` handler runs entirely client-side, before any request reaches the Next.js middleware that enforces auth redirects — so a cached copy of `/dashboard` or `/medicines` (a real medicine list) would still render from the SW cache even after the user logged out, or for a different user on a shared/public device, since the cache fallback never re-checks auth state at all.
+
+**Cause:** Service workers intercept navigation at the browser layer, fully in front of (not behind) the server's own auth logic. A caching strategy that's perfectly safe for a stateless marketing site silently becomes a cross-session data leak the moment any cached route holds per-user data — this isn't obvious from reading the SW code in isolation, since the code "looks correct" (network-first is the recommended pattern for dynamic content) and the actual risk only shows up when reasoning about *which URLs* get cached, not the caching strategy itself.
+
+**Rule:** Any service worker (or other client-side cache layer that can serve a response without hitting the server) must explicitly exclude every authenticated/protected route from caching and from cache-fallback — check the route against the same `PROTECTED_PREFIXES` list `middleware.ts` already uses, and route those requests straight to the network with no fallback. Only genuinely public, stateless pages should ever get offline-tolerance caching. Before adding or expanding any caching layer (this includes a future move to `next-pwa`/Workbox), audit it against this list first.
+
 ### 2026-06-19 (Phase 6 — bottom sheets rendering behind BottomNav, two wrong diagnoses before the real one)
 
 **Problem:** User reported the submit button in `AddFamilyMemberSheet` was invisible and unreachable by scrolling. First fix attempt (add `overflow-y-auto max-h-[88vh]` to match the existing medicine sheets) didn't help. Second fix attempt (restructure to a flex layout with the button in a `flex-shrink-0` footer outside the scroll area, switch to `dvh` units) *also* didn't help — user reported "still same issue." Only a screenshot revealed the real cause: the button wasn't below the fold at all, it was rendering directly **behind** `BottomNav` — both used `z-50`, and since `BottomNav` renders later in the DOM (a sibling after `{children}` in the dashboard layout), it painted on top of the sheet's bottom edge. No amount of scrolling can fix an opaque fixed bar permanently covering part of the screen.

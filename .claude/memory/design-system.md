@@ -236,7 +236,31 @@ faint wash.
 | "Interaction data unavailable" result | inline |
 | `/disclaimer` page | full |
 | Interaction results expandable section | full |
+| Doctor-visit medication list export (print/PDF) | export |
 
 > **Rule:** No interaction result (positive, negative, or unavailable) may be shown to
 > the user without the `inline` disclaimer visible on the same screen. This is
 > non-negotiable.
+
+---
+
+## Print Output (Doctor Visit Export)
+
+Midnight Safe's dark theme is for screens only. The doctor-visit medication list
+(`/medicines/export`) is the one screen meant to be printed, and printing the dark
+theme as-is would waste ink and be unreadable on paper. `globals.css` flips the
+`--ms-*` tokens to light/ink-friendly values inside `@media print` only — `--ms-bg`/
+`--ms-surf` become white, `--ms-txt*` become dark grays. `BottomNav` and the global
+footer disclaimer carry `print:hidden`; the export page renders its own minimal
+header, table, and `MEDICAL_DISCLAIMER.export` line instead, so what prints is just
+the medication list, not the app chrome around it.
+
+## Onboarding Flow
+
+A 4-slide first-login overlay (`OnboardingFlow.tsx`), gated on a `localStorage` flag
+so it only ever shows once. Uses plain CSS `transform: translateX()` transitions
+between slides, not Framer Motion — despite `tech-stack.md` listing Framer Motion as
+available, every animation actually shipped in this app (fadeUp, pulseAlert, scanLine,
+shimmer, and now this) has been a native CSS transition/keyframe, and onboarding follows
+that established precedent rather than introducing the first real usage of an
+otherwise-unused dependency.
